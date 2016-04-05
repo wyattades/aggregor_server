@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 	"os"
-	"github.com/gin-gonic/gin"
-	"github.com/spenserw/aggregor"
+	//"github.com/gin-gonic/gin"
+	//"github.com/spenserw/aggregor"
 )
 
 func main() {
