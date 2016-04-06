@@ -17,6 +17,12 @@
     "type": "git",
     "url": "https://github.com/wyattades/webapp"
   },
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha"
+  },
+  "devDependencies": {
+    "mocha": "1.15.1"
+  },
   "keywords": [
     "node",
     "heroku",
