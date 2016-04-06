@@ -1,0 +1,7 @@
+notifications:
+  slack: aggregor:B9f2wbc7pBQeTsFGiIzdTZiu
+deploy:
+  provider: heroku
+  api_key:
+    secure: ""
+  app: aggregor
