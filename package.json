@@ -7,10 +7,6 @@
     "express": "4.13.3"
   },
   "scripts": {
-    "start": "node index.js"
-  },
-  "scripts": {
-    "test": "./node_modules/mocha/bin/mocha",
     "test": "grunt --verbose"
   },
   "engines": {
@@ -21,6 +17,8 @@
     "url": "https://github.com/wyattades/webapp"
   },
   "devDependencies": {
+    "grunt": "^1.0.1",
+    "grunt-contrib-jshint": "^1.0.0",
     "mocha": "1.15.1"
   },
   "keywords": [
