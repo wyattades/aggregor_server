@@ -7,6 +7,10 @@ var apiRouter = require('./api_routes.js').apiRouter;
 
 app.set('port', (process.env.PORT || 5000));
 
+app.get('/', function(req, resp, next) {
+  resp.json({body: 'hello, world!'});
+});
+
 app.use('/api/', apiRouter);
 
 app.listen(app.get('port'), function() {
