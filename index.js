@@ -3,7 +3,7 @@ var app = express();
 // var uuid = require('node-uuid');
 // var mongoose = require('mongoose');
 
-var apiRouter = require('./api_routes.js').apiRouter;
+var apiRouter = require('./api_routes').apiRouter;
 
 app.set('port', (process.env.PORT || 5000));
 

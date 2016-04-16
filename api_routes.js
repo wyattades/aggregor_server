@@ -1,7 +1,7 @@
 var express = require('express');
 var apiRouter = express.Router();
 
-apiRouter.param(function(req, resp, next) {
+apiRouter.use(function(req, resp, next) {
   next(); // Remove this line to enable security!
   
   var token = req.get('X-Auth-Token');
