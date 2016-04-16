@@ -4,10 +4,10 @@
   "description": "An aggregating webapp prototype",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "./node_modules/mocha/bin/mocha"
   },
   "dependencies": {
-    "ejs": "2.3.3",
     "express": "4.13.3"
   },
   "engines": {
@@ -16,9 +16,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/wyattades/webapp"
-  },
-  "scripts": {
-    "test": "./node_modules/mocha/bin/mocha"
   },
   "devDependencies": {
     "mocha": "1.15.1"
