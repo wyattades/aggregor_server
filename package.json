@@ -3,12 +3,15 @@
   "version": "0.0.0",
   "description": "An aggregating webapp prototype",
   "main": "index.js",
+  "dependencies": {
+    "express": "4.13.3"
+  },
   "scripts": {
     "start": "node index.js"
   },
-  "dependencies": {
-    "ejs": "2.3.3",
-    "express": "4.13.3"
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha",
+    "test": "grunt --verbose"
   },
   "engines": {
     "node": "0.12.7"
@@ -16,9 +19,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/wyattades/webapp"
-  },
-  "scripts": {
-    "test": "./node_modules/mocha/bin/mocha"
   },
   "devDependencies": {
     "mocha": "1.15.1"
@@ -28,5 +28,5 @@
     "heroku",
     "express"
   ],
-  "license": "none"
+  "license": "MIT"
 }
