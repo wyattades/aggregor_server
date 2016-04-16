@@ -22,4 +22,4 @@ apiRouter.get('/', function(req, res) {
   res.status(200).json({text: 'hello, world!'});
 });
 
-module.apiRouter = apiRouter;
+module.exports.apiRouter = apiRouter;
