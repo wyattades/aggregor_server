@@ -4,8 +4,7 @@
   "description": "An aggregating webapp prototype",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "./node_modules/mocha/bin/mocha"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "4.13.3"
@@ -19,6 +18,9 @@
   },
   "devDependencies": {
     "mocha": "1.15.1"
+  },
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha"
   },
   "keywords": [
     "node",
