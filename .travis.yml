@@ -7,6 +7,7 @@ install:
   - npm install
   - npm install -g node-mongo-seeds
 before_script:
+  - seed-setup
   - seed
 deploy:
   provider: heroku
