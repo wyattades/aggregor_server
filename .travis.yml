@@ -1,6 +1,9 @@
 language: node_js
 node_js:
   - "iojs"
+  - "0.10"
+before_script:
+  - npm install grunt-cli -g
 deploy:
   provider: heroku
   api_key:
