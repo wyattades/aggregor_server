@@ -4,6 +4,7 @@ node_js:
 services:
   - mongodb
 install:
+  - npm install
   - npm install -g node-mongo-seeds
 before_script:
   - seed
