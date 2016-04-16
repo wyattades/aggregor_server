@@ -48,3 +48,6 @@ Temporary Items
 
 # Seed files
 seed.json
+
+# Dotenv
+.env
