@@ -4,7 +4,8 @@
   "description": "An aggregating webapp prototype",
   "main": "src/index.js",
   "dependencies": {
-    "express": "4.13.3"
+    "express": "4.13.3",
+    "dotenv": "~2.0.0"
   },
   "scripts": {
     "test": "grunt test"
