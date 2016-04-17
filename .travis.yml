@@ -1,14 +1,6 @@
 language: node_js
 node_js:
   - "iojs"
-services:
-  - mongodb
-install:
-  - npm install
-  - npm install -g node-mongo-seeds
-before_script:
-  - seed-setup
-  - seed
 deploy:
   provider: heroku
   api_key:
