@@ -21,7 +21,9 @@
     "grunt": "^1.0.1",
     "grunt-contrib-jshint": "^1.0.0",
     "grunt-contrib-nodeunit": "^1.0.0",
-    "mocha": "1.15.1"
+    "mocha": "1.15.1",
+    "mongodb": "^2.1.16",
+    "mongoose": "^4.4.12"
   },
   "keywords": [
     "node",
