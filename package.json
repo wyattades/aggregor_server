@@ -2,14 +2,14 @@
   "name": "aggregor",
   "version": "0.0.1",
   "description": "An aggregating webapp prototype",
-  "main": "src/index.js",
   "dependencies": {
     "express": "4.13.3",
     "dotenv": "~2.0.0",
     "mongoose": "^4.4.12"
   },
   "scripts": {
-    "test": "grunt test"
+    "test": "grunt test",
+    "start" : "node src/index.js"
   },
   "engines": {
     "node": "0.12.7"
