@@ -10,7 +10,7 @@ var pg = require('pg');
 console.log('Attempting to connect to db...');
 pg.connect(process.env.DB_URI, function(err, client, done) {
   console.assert(!err, "Failed to generate pg client pool!");
-})
+});
 
 
 var apiRouter = require('./api_routes').apiRouter;
