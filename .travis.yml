@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - "iojs"
+  - "5"
 before_script:
   - npm install grunt-cli -g
   - npm install db-migrate -g
