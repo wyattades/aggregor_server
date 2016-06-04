@@ -26,3 +26,5 @@ Migrations can be run via the convenience scripts (`scripts/migrate_up.sh`, etc.
 #### 2.2 Seeding
 
 The database is seeded from `config/seeds.sql`. This can be run directly through Postgres or with the convenience script `scripts/seed.sh`
+
+!!! Don't forget to update the seed file if you change the schema !!!
