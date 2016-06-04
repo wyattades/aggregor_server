@@ -1,4 +1,7 @@
-require('dotenv').config();
+
+if(process.env.NODE_ENV != 'production') {
+  require('dotenv').config();
+}
 
 var express = require('express');
 var app = express();
@@ -12,7 +15,7 @@ db.once('open', function() {
 
   var apiRouter = require('./api_routes').apiRouter;
 
-  app.set('port', (process.env.PORT || 5000));
+  app.set('port', (process.env.LISTEN_PORT || 5000));
 
   app.get('/', function(req, resp, next) {
     resp.json({body: 'hello, world!'});
