@@ -6,24 +6,23 @@ if(process.env.NODE_ENV != 'production') {
 var express = require('express');
 var app = express();
 
-var mongoose = require('mongoose');
-console.log('Connecting to db: ' + process.env.MONGODB_URI);
-mongoose.connect(process.env.MONGODB_URI);
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function() {
+var pg = require('pg');
+console.log('Attempting to connect to db...');
+pg.connect(process.env.DB_URI, function(err, client, done) {
+  console.assert(!err, "Failed to generate pg client pool!");
+})
 
-  var apiRouter = require('./api_routes').apiRouter;
 
-  app.set('port', (process.env.LISTEN_PORT || 5000));
+var apiRouter = require('./api_routes').apiRouter;
 
-  app.get('/', function(req, resp, next) {
-    resp.json({body: 'hello, world!'});
-  });
+app.set('port', (process.env.LISTEN_PORT || 5000));
 
-  app.use('/api', apiRouter);
+app.get('/', function(req, resp, next) {
+  resp.json({body: 'hello, world!'});
+});
 
-  app.listen(app.get('port'), function() {
-    console.log('Node app is running on port', app.get('port'));
-  });
+app.use('/api', apiRouter);
+
+app.listen(app.get('port'), function() {
+  console.log('Node app is running on port', app.get('port'));
 });
