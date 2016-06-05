@@ -1,4 +1,6 @@
-# Aggregor Web App <img src="https://travis-ci.org/wyattades/webapp.svg?branch=master" >
+# Aggregor Server <img src="https://travis-ci.org/wyattades/webapp.svg?branch=master" >
+
+### Aggregor Web App
 
 Aggregor is an aggregating website that pulls feeds from other sources into a single, susinct web page
 
