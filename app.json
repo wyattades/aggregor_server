@@ -1,8 +1,6 @@
 {
   "name": "Aggregor",
   "description": "An aggregating webapp prototype",
-  "repository": "https://github.com/wyattades/webapp",
-  "logo": "http://node-js-sample.herokuapp.com/node.svg",
-  "keywords": ["node", "express", "static"],
-  "image": "heroku/nodejs"
-}
+  "repository": "https://github.com/GatorCoding/aggregor_server",
+  "keywords": ["node", "express", "static"]
+  }
