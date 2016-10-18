@@ -2,33 +2,22 @@
   "name": "aggregor",
   "version": "0.0.1",
   "description": "An aggregating webapp prototype",
-  "dependencies": {
-    "express": "4.13.3",
-    "dotenv": "~2.0.0",
-    "pg": "4.5.6"
-  },
   "scripts": {
-    "test": "grunt test",
-    "start" : "NODE_ENV=dev && node src/index.js"
-  },
-  "engines": {
-    "node": "0.12.7"
+    "test": "",
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/GatorCoding/aggregor_server"
   },
+  "dependencies": {
+    "pg": "6.1.0"
+  },
   "devDependencies": {
-    "grunt": "^1.0.1",
-    "grunt-contrib-jshint": "^1.0.0",
-    "grunt-contrib-nodeunit": "^1.0.0",
-    "mocha": "1.15.1",
-    "db-migrate": ">=0.9.25"
+    "node-pg-migrate": "GatorCoding/node-pg-migrate#8119bd6c42dbd0287438f130d74e48a3d4879e70"
   },
   "keywords": [
-    "node",
-    "heroku",
-    "express"
+    "node"
   ],
   "license": "MIT"
 }

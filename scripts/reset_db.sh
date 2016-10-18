@@ -1,2 +1,3 @@
-dropdb aggregor
-createdb aggregor -O aggregor
+#!/bin/zsh
+sudo --user=postgres dropdb aggregor
+sudo --user=postgres createdb aggregor -O aggregor

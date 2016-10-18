@@ -1,4 +1,0 @@
-{
-  "dev": "pg://localhost:5432/aggregor?user=aggregor&password=aggregor",
-  "prod": { "ENV" : "DB_URI" }
-}

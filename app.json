@@ -1,6 +1,0 @@
-{
-  "name": "Aggregor",
-  "description": "An aggregating webapp prototype",
-  "repository": "https://github.com/GatorCoding/aggregor_server",
-  "keywords": ["node", "express", "static"]
-  }
