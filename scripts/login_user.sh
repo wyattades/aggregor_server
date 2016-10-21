@@ -1,5 +1,5 @@
 #!/bin/bash
 curl -X POST \
      -H 'Content-Type: application/json' \
-     -d '{"username": "spenserw", "password": "1234"}' \
+     -d '{"username": "spenserw", "password": "iamtestingmypassword"}' \
      localhost:3000/user/login

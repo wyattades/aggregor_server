@@ -1,32 +1,15 @@
 const crypto = require('crypto');
 
+const {
+  generateSalt,
+  generatePasswordHash
+} = require('./auth');
 const responses = require('./responses');
-var pg;
-
-const SALT_SIZE = 16,
-      HASH_SIZE = 64,
-      HASH_ITTRS = 10000;
 
 // 4 bytes in hex is 8 chars
 const ID_SIZE = 4;
 
-var USERS = [];
-
-function generateSalt() {
-  return new Promise( (resolve, reject) => {
-    crypto.randomBytes(SALT_SIZE, (err, buf) => {
-      resolve(buf.toString('hex'));
-    });
-  });
-}
-
-function generatePasswordHash(raw, salt) {
-  return new Promise( (resolve, reject) => {
-    crypto.pbkdf2(raw, salt, HASH_ITTRS, HASH_SIZE, 'sha512', (err, key) => {
-      resolve(key.toString('hex'));
-    });
-  });
-}
+var pg;
 
 function generateId() {
   return new Promise( (resolve, reject) => {
@@ -45,16 +28,16 @@ function generateId() {
             } else {
               client = _client;
               done = _done;
-              validate(id, client, done);
+              validate(id);
             }
           });
         } else {
-          validate(id, client, done);
+          validate(id);
         }
       });
     }
 
-    function validate(id, client, done) {
+    function validate(id) {
       client.query('SELECT id FROM users WHERE id = $1::text', [id], (err, res) => {
         if(!res.rows.length) {
           resolve(id);
@@ -71,12 +54,21 @@ function generateId() {
 
 function getUserByUsername(username) {
   return new Promise( (resolve, reject) => {
-    let user = USERS.find((user) => user.username === username);
-    if(!user) {
-      reject(responses.badRequest("User not found with username: " + username));
-    } else {
-      resolve(user);
-    }
+    pg.pool().connect((err, client, done) => {
+      client.query('SELECT * FROM users WHERE username = $1::text', [username], (err, res) => {
+        done();
+        if(err) {
+          reject(responses.internalError(err));
+        } else {
+          const user = res.rows.length ? res.rows[0] : undefined;
+          if(!user) {
+            reject(responses.badRequest("User not found with username: " + username));
+          } else {
+            resolve(user);
+          }
+        }
+      });
+    });
   });
 }
 
@@ -105,19 +97,29 @@ exports.newUser = function(data) {
 
       generateSalt().then( (salt) => {
         Promise.all([generateId(), generatePasswordHash(userInfo.password, salt)]).then( (vals) => {
-          const id = vals[0],
-                hash = vals[1];
+          const [id, hash] = vals;
 
-          USERS.push({
-            id,
-            username: userInfo.username.toLowerCase(),
-            email: userInfo.email || '',
-            first_name: userInfo.first_name,
-            last_name: userInfo.last_name,
-            password_salt: salt,
-            password_hash: hash
+          pg.pool().connect((err, client, done) => {
+            client.query('INSERT INTO users VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', [
+                id,
+                userInfo.username,
+                userInfo.email || '',
+                userInfo.first_name,
+                userInfo.last_name,
+                salt,
+                hash,
+                (new Date(Date.now())).toISOString()
+              ],
+              (err, res) => {
+                done();
+                if(err) {
+                  reject(responses.internalError(err));
+                } else {
+                  resolve({data: true});
+                }
+              }
+            );
           });
-          resolve({data: USERS[USERS.length - 1]});
         });
       });
     }
@@ -141,8 +143,12 @@ exports.loginUser = function(data) {
               submittedPassword = loginData.password;
 
         generatePasswordHash(submittedPassword, passwordSalt).then( (hash) => {
-          let authed = crypto.timingSafeEqual(Buffer.from(passwordHash), Buffer.from(hash));
-          resolve({data: authed});
+          if(crypto.timingSafeEqual(Buffer.from(passwordHash), Buffer.from(hash))) {
+            // handle login
+            resolve({data: true});
+          } else {
+            reject(responses.unauthorized("Bad login information"));
+          }
         });
       }, (err) => {
         reject(err);

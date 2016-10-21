@@ -1,13 +1,20 @@
 exports.badRequest = (data) => {
   return {
+    code: 400,
+    data: 'Bad request: ' + data
+  }
+}
+
+exports.unauthorized = (data) => {
+  return {
     code: 401,
-    data
+    data: 'Unauthorized: ' + data
   }
 }
 
 exports.internalError = (data) => {
   return {
     code: 500,
-    data
+    data: 'Internal server error: ' + data
   }
 }

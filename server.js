@@ -109,7 +109,7 @@ function run(port) {
       // Handle reject
       (resp) => {
         res.writeHead(resp.code || 500);
-        res.end();
+        res.end(resp.data || '');
       }
     );
   }).listen(port);
