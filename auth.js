@@ -5,13 +5,25 @@ var pg;
 
 const SALT_SIZE = 16,
       HASH_SIZE = 64,
-      HASH_ITTRS = 10000;
+      HASH_ITTRS = 10000,
+      TOKEN_PAYLOAD_SIZE = 8,
+      TOKEN_SECRET_SIZE = 16;
+
+function randomBytes(size) {
+  return new Promise( (resolve, reject) => {
+    crypto.randomBytes(size, (err, buf) => {
+      if(err) {
+        reject(err);
+      } else {
+        resolve(buf.toString('hex'));
+      }
+    });
+  });
+}
 
 exports.generateSalt = function() {
   return new Promise( (resolve, reject) => {
-    crypto.randomBytes(SALT_SIZE, (err, buf) => {
-      resolve(buf.toString('hex'));
-    });
+    randomBytes(SALT_SIZE).then( (bytes) => resolve(bytes), (err) => reject(err) );
   });
 }
 
@@ -23,8 +35,50 @@ exports.generatePasswordHash = function(raw, salt) {
   });
 }
 
-exports.generateAuthToken = function() {
+function generateAuthToken() {
   return new Promise( (resolve, reject) => {
-    
+    Promise.all([ randomBytes(TOKEN_PAYLOAD_SIZE), randomBytes(TOKEN_SECRET_SIZE)]).then(
+      (values) => {
+        let [payload, secret] = values,
+            token = jwt.sign({ data: payload }, secret);
+
+        resolve({token, secret});
+      },
+      (err) => {
+        reject(responses.internalError(err));
+      }
+    );
   });
+}
+
+exports.newAuthToken = function(userId) {
+  return new Promise( (resolve, reject) => {
+    generateAuthToken().then(
+      (tokenInfo) => {
+        pg.pool().connect((err, client, done) => {
+          client.query('INSERT INTO auth_tokens VALUES (DEFAULT, $1, $2, $3, $4)', [
+              userId,
+              tokenInfo.token,
+              tokenInfo.secret,
+              (new Date(Date.now())).toISOString()
+            ],
+            (err, res) => {
+              if(err) {
+                reject(err);
+              } else {
+                resolve(tokenInfo.token);
+              }
+            }
+          );
+        });
+      },
+      (err) => {
+        reject(responses.internalError(err));
+      }
+    );
+  });
+}
+
+exports.init = function(_pg) {
+  pg = _pg;
 }

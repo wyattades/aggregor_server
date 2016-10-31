@@ -3,7 +3,9 @@ const http = require('http'),
 
 const config = require('./config'),
       pg = require('./pg'),
-      user = require('./user');
+      user = require('./user'),
+      auth = require('./auth');
+
 var pool;
 
 const ROUTES = {
@@ -82,6 +84,7 @@ function init() {
   });
 
   user.init(pg);
+  auth.init(pg);
 }
 
 function run(port) {

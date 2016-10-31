@@ -2,7 +2,8 @@ const crypto = require('crypto');
 
 const {
   generateSalt,
-  generatePasswordHash
+  generatePasswordHash,
+  newAuthToken
 } = require('./auth');
 const responses = require('./responses');
 
@@ -115,7 +116,10 @@ exports.newUser = function(data) {
                 if(err) {
                   reject(responses.internalError(err));
                 } else {
-                  resolve({data: true});
+                  newAuthToken(id).then(
+                    (token) => resolve({data: token}),
+                    (err) => reject(responses.internalError(err))
+                  );
                 }
               }
             );
@@ -144,8 +148,10 @@ exports.loginUser = function(data) {
 
         generatePasswordHash(submittedPassword, passwordSalt).then( (hash) => {
           if(crypto.timingSafeEqual(Buffer.from(passwordHash), Buffer.from(hash))) {
-            // handle login
-            resolve({data: true});
+            newAuthToken(user.id).then(
+              (token) => resolve({data: token}),
+              (err) => reject(responses.internalError(err))
+            );
           } else {
             reject(responses.unauthorized("Bad login information"));
           }
