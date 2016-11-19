@@ -10,7 +10,7 @@ var pool;
 
 const ROUTES = {
   user_new: {
-    endpoint: regexRoute('/user/new'),
+    endpoint: regexRoute('/user'),
     methods: ['POST'],
     content_types: ['application/json'],
     handle: (req, match) => {
@@ -34,6 +34,17 @@ const ROUTES = {
         req.on('end', () => {
           user.loginUser(data).then( (resp) => resolve(resp), (err) => reject(err));
         });
+      });
+    }
+  },
+  user_logout: {
+    endpoint: regexRoute('/user/logout'),
+    methods: ['POST'],
+    content_types: ['application/json'],
+    authenticate: true,
+    handle: (req, match, authInfo) => {
+      return new Promise( (resolve, reject) => {
+        user.logoutUser(authInfo).then( (resp) => resolve(resp), (err) => reject(err) );
       });
     }
   }
@@ -91,30 +102,59 @@ function run(port) {
   console.log("Server running on port: " + port);
   http.createServer( (req, res) => {
 
+    function respond(code, msg='', data='', headers={}) {
+      headers['Content-Type'] = 'application/json';
+      res.writeHead(code, headers);
+      res.end(JSON.stringify({code, msg, data}));
+    }
+
     const [route, match] = matchUrl(req);
+    let authInfo = {};
 
     if(!route) {
-      res.writeHead(404);
-      res.end("Couldn't find route " + req.url);
+      respond(404, 'Not Found', 'No route ' + req.url);
       return;
     }
 
-    route.handle(req, match, res).then(
-      (resp) => {
-        if(!resp.code)
-          resp.code = 200;
-
-        if(!resp.handled) {
-          res.writeHead(resp.code, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify(resp.data));
-        }
-      },
-      // Handle reject
-      (resp) => {
-        res.writeHead(resp.code || 500);
-        res.end(resp.data || '');
+    if(route.authenticate) {
+      const token = req.headers['x-aggregor-token'];
+      if(token) {
+        auth.validateAuthToken(token).then(
+          (userId) => {
+            user.getAuthedUser(userId).then(
+              (user) => {
+                authInfo.user = user;
+                authInfo.token = token;
+                handle();
+              },
+              (err) => {
+                respond(err.code, err.msg, err.data);
+              }
+            );
+          },
+          (err) => {
+            respond(err.code, err.msg, err.data);
+          }
+        );
+      } else {
+        respond(401, 'Unauthorized', '');
       }
-    );
+    } else {
+      handle();
+    }
+
+    function handle() {
+      route.handle(req, match, authInfo, res).then(
+        (resp) => {
+          if(!resp.handled) {
+            respond(resp.code || 200, resp.msg || 'OK', resp.data);
+          }
+        },
+        (err) => {
+          respond(err.code || 500, err.msg, err.data);
+        }
+      );
+    }
   }).listen(port);
 }
 

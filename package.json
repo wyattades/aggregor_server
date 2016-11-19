@@ -2,6 +2,9 @@
   "name": "aggregor",
   "version": "0.0.1",
   "description": "An aggregating webapp prototype",
+  "engines": {
+    "node": ">=6.6.0"
+  },
   "scripts": {
     "test": "",
     "start": "node server.js"

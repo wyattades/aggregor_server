@@ -3,7 +3,8 @@ const crypto = require('crypto');
 const {
   generateSalt,
   generatePasswordHash,
-  newAuthToken
+  newAuthToken,
+  deleteAuthToken
 } = require('./auth');
 const responses = require('./responses');
 
@@ -58,12 +59,35 @@ function getUserByUsername(username) {
     pg.pool().connect((err, client, done) => {
       client.query('SELECT * FROM users WHERE username = $1::text', [username], (err, res) => {
         done();
+
         if(err) {
           reject(responses.internalError(err));
         } else {
           const user = res.rows.length ? res.rows[0] : undefined;
           if(!user) {
             reject(responses.badRequest("User not found with username: " + username));
+          } else {
+            resolve(user);
+          }
+        }
+      });
+    });
+  });
+}
+
+// Return a minimal form of the user
+exports.getAuthedUser = function(userId) {
+  return new Promise( (resolve, reject) => {
+    pg.pool().connect((err, client, done) => {
+      client.query('SELECT id, username, email, first_name, last_name, created_on FROM users WHERE id = $1', [userId], (err, res) => {
+        done();
+
+        if(err) {
+          reject(responses.internalError(err));
+        } else {
+          const user = res.rows.length ? res.rows[0] : undefined;
+          if(!user) {
+            reject(responses.internalError("User not found for matched token!"));
           } else {
             resolve(user);
           }
@@ -85,14 +109,15 @@ exports.newUser = function(data) {
     if(userInfo) {
       const requiredInfo = ['last_name', 'first_name', 'username', 'password'],
             keys = Reflect.ownKeys(userInfo);
-      var missing;
+      var missing = [];
       requiredInfo.forEach((i) => {
-        if(!keys.includes(i) && !requiredInfo[i].length)
-          missing = i;
+        let key = keys.find((k) => k === i);
+        if(!key || !userInfo[key].trim().length)
+          missing.push(i);
       });
 
-      if(missing) {
-        reject(responses.badRequest(`Missing required value ${missing}`));
+      if(missing.length) {
+        reject(responses.badRequest(`Missing required value${missing.length > 1 ? 's' : ''}: ${missing.join(", ")}`));
         return;
       }
 
@@ -117,7 +142,7 @@ exports.newUser = function(data) {
                   reject(responses.internalError(err));
                 } else {
                   newAuthToken(id).then(
-                    (token) => resolve({data: token}),
+                    (token) => resolve({data: {token}}),
                     (err) => reject(responses.internalError(err))
                   );
                 }
@@ -149,7 +174,7 @@ exports.loginUser = function(data) {
         generatePasswordHash(submittedPassword, passwordSalt).then( (hash) => {
           if(crypto.timingSafeEqual(Buffer.from(passwordHash), Buffer.from(hash))) {
             newAuthToken(user.id).then(
-              (token) => resolve({data: token}),
+              (token) => resolve({data: {token}}),
               (err) => reject(responses.internalError(err))
             );
           } else {
@@ -160,6 +185,17 @@ exports.loginUser = function(data) {
         reject(err);
       });
     }
+  });
+}
+
+exports.logoutUser = function(authInfo) {
+  return new Promise( (resolve, reject) => {
+    deleteAuthToken(authInfo.token).then( () => {
+      resolve({data: {}});
+    },
+    (err) => {
+      reject(err);
+    });
   });
 }
 

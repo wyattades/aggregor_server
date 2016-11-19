@@ -1,5 +1,6 @@
 const crypto = require('crypto'),
-      jwt = require('jsonwebtoken');
+      jwt = require('jsonwebtoken'),
+      responses = require('./responses');
 
 var pg;
 
@@ -64,7 +65,7 @@ exports.newAuthToken = function(userId) {
             ],
             (err, res) => {
               if(err) {
-                reject(err);
+                reject(responses.internalError(err));
               } else {
                 resolve(tokenInfo.token);
               }
@@ -76,6 +77,46 @@ exports.newAuthToken = function(userId) {
         reject(responses.internalError(err));
       }
     );
+  });
+}
+
+exports.deleteAuthToken = function(tokenText) {
+  return new Promise( (resolve, reject) => {
+    pg.pool().connect((err, client, done) => {
+      if(err) {
+        reject(responses.internalError(err));
+      } else {
+        client.query('DELETE FROM auth_tokens WHERE token = $1', [tokenText], (err, res) => {
+          done();
+
+          if(err) {
+            reject(responses.internalError(err));
+          } else {
+            resolve();
+          }
+        });
+      }
+    });
+  });
+}
+
+exports.validateAuthToken = function(token) {
+  return new Promise( (resolve, reject) => {
+    pg.pool().connect((err, client, done) => {
+      client.query('SELECT * FROM auth_tokens WHERE token = $1', [token], (err, res) => {
+        if(err) {
+          reject(responses.internalError({data: err}));
+          done();
+        } else {
+          if(res.rows.length) {
+            const tokenInfo = res.rows[0];
+            resolve(tokenInfo.user_id);
+          } else {
+            reject(responses.unauthorized());
+          }
+        }
+      });
+    });
   });
 }
 

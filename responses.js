@@ -1,20 +1,31 @@
 exports.badRequest = (data) => {
   return {
     code: 400,
-    data: 'Bad request: ' + data
+    msg: 'Bad Request',
+    data
+  }
+}
+
+exports.notFound = (data) => {
+  return {
+    code: 404,
+    msg: 'Unknown Resource',
+    data
   }
 }
 
 exports.unauthorized = (data) => {
   return {
     code: 401,
-    data: 'Unauthorized: ' + data
+    msg: 'Unauthorized',
+    data
   }
 }
 
 exports.internalError = (data) => {
   return {
     code: 500,
-    data: 'Internal server error: ' + data
+    msg: 'Internal server error',
+    data
   }
 }
