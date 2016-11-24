@@ -4,21 +4,19 @@ const http = require('http'),
 const config = require('./config'),
       pg = require('./pg'),
       user = require('./user'),
-      auth = require('./auth');
-
-var pool;
+      auth = require('./auth'),
+      feed = require('./feed'),
+      utils = require('./utils');
 
 const ROUTES = {
   user_new: {
     endpoint: regexRoute('/user'),
     methods: ['POST'],
     content_types: ['application/json'],
-    handle: (req, match) => {
+    handle: (req) => {
       return new Promise( (resolve, reject) => {
-        let data = '';
-        req.on('data', (chunk) => { data += chunk.toString('utf-8') });
-        req.on('end', () => {
-          user.newUser(data).then( (resp) => resolve(resp), (err) => reject(err));
+        utils.aggregateStream(req).then( (data) => {
+          user.newUser(data.toString()).then(resolve, reject);
         });
       });
     }
@@ -27,12 +25,10 @@ const ROUTES = {
     endpoint: regexRoute('/user/login'),
     methods: ['POST'],
     content_types: ['application/json'],
-    handle: (req, match) => {
+    handle: (req) => {
       return new Promise( (resolve, reject) => {
-        let data = '';
-        req.on('data', (chunk) => { data += chunk.toString('utf-8') });
-        req.on('end', () => {
-          user.loginUser(data).then( (resp) => resolve(resp), (err) => reject(err));
+        utils.aggregateStream(req).then( (data) => {
+          user.loginUser(data.toString()).then(resolve, reject);
         });
       });
     }
@@ -43,7 +39,63 @@ const ROUTES = {
     authenticate: true,
     handle: (req, match, authInfo) => {
       return new Promise( (resolve, reject) => {
-        user.logoutUser(authInfo).then( (resp) => resolve(resp), (err) => reject(err) );
+        user.logoutUser(authInfo).then(resolve, reject);
+      });
+    }
+  },
+  create_feed: {
+    endpoint: regexRoute('/user/:user_name/feed'),
+    methods: ['POST'],
+    content_types: ['application/json'],
+    authenticate: true,
+    handle: (req, match, authInfo) => {
+      return new Promise( (resolve, reject) => {
+        utils.aggregateStream(req).then( (data) => {
+          feed.createFeed(authInfo.user.id, data.toString()).then(resolve, reject);
+        });
+      });
+    }
+  },
+  delete_feed: {
+    endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
+    methods: ['DELETE'],
+    authenticate: true,
+    handle: (req, match, authInfo) => {
+      return new Promise( (resolve, reject) => {
+        feed.deleteFeed(authInfo.user.id, match[2]).then(resolve, reject);
+      });
+    }
+  },
+  fetch_feed: {
+    endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
+    methods: ['GET'],
+    authenticate: true,
+    handle: (req, match, authInfo, res) => {
+      return new Promise( (resolve, reject) => {
+        feed.fetchFeed(authInfo.user.id, match[2], res).then(resolve, reject);
+      });
+    }
+  },
+  add_plugin: {
+    endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
+    methods: ['POST'],
+    content_types: ['application/json'],
+    authenticate: true,
+    handle: (req, match, authInfo) => {
+      return new Promise( (resolve, reject) => {
+        utils.aggregateStream(req).then( (data) => {
+          feed.addPlugin(authInfo.user.id, match[2], data.toString()).then(resolve, reject);
+        });
+      });
+    }
+  },
+  remove_plugin: {
+    endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
+    methods: ['DELETE'],
+    authenticate: true,
+    handle: (req, match, authInfo) => {
+      return new Promise( (resolve, reject) => {
+        
       });
     }
   }
@@ -51,11 +103,13 @@ const ROUTES = {
 
 function regexRoute(rt) {
   const MACROS = {
-    user_id: '([a-z0-9]{8})'
+    //user_id: '([a-z0-9]{8})',
+    user_name: '([a-zA-Z0-9]{4,32})',
+    feed_name: '([a-zA-Z0-9]{1,32})'
   };
 
-  re = `^${rt}/?$`
-    .replace(/{\w+}/g, (m, name) => MACROS[name] ? MACROS[name] : m);
+  let re = `^${rt}/?$`
+    .replace(/:(\w+)/g, (m, name) => MACROS[name] ? MACROS[name] : m);
 
   return new RegExp(re);
 }
@@ -95,6 +149,7 @@ function init() {
 
   user.init(pg);
   auth.init(pg);
+  feed.init(pg);
 }
 
 function run(port) {
@@ -126,14 +181,10 @@ function run(port) {
                 authInfo.token = token;
                 handle();
               },
-              (err) => {
-                respond(err.code, err.msg, err.data);
-              }
+              (err) => respond(err.code, err.msg, err.data)
             );
           },
-          (err) => {
-            respond(err.code, err.msg, err.data);
-          }
+          (err) => respond(err.code, err.msg, err.data)
         );
       } else {
         respond(401, 'Unauthorized', '');

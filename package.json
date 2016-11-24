@@ -14,6 +14,7 @@
     "url": "https://github.com/GatorCoding/aggregor_server"
   },
   "dependencies": {
+    "feedparser": "^1.1.5",
     "jsonwebtoken": "^7.1.9",
     "pg": "6.1.0"
   },
