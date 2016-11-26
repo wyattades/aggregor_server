@@ -13,6 +13,6 @@ exports.up = function(pgm) {
 };
 
 exports.down = function(pgm) {
-   let sql = `DROP TABLE feeds; DROP INDEX user_id_name_idx; DROP INDEX feed_user_id_idx;`;
+   let sql = `DROP INDEX user_id_name_idx; DROP INDEX feed_user_id_idx; DROP TABLE feeds;`;
    pgm.sql(sql);
 };

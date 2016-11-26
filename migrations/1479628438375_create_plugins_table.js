@@ -5,13 +5,13 @@ exports.up = function(pgm) {
     type varchar(64) NOT NULL,
     data jsonb
   );
-  
+
   CREATE INDEX plugin_feed_id_idx ON plugins (feed_id);`;
 
   pgm.sql(sql);
 };
 
 exports.down = function(pgm) {
-  let sql = `DROP TABLE plugins;`;
+  let sql = `DROP INDEX plugin_feed_id_idx; DROP TABLE plugins;`;
   pgm.sql(sql);
 };
