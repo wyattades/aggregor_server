@@ -1,32 +1,90 @@
 # Aggregor Server <img src="https://travis-ci.org/wyattades/webapp.svg?branch=master" >
 
-### Aggregor Web App
+[Aggregor](http://www.aggregor.us/) is an aggregating website that pulls feeds from other sources into a single, susinct web page.  
 
-Aggregor is an aggregating website that pulls feeds from other sources into a single, susinct web page
+1. Setup
+2. Documentation  
+ a. Endpoints  
+ b. Authentication
 
-Web application prototype using Heroku &amp; NodeJS, refer to our <a href="https://realtimeboard.com/app/board/o9J_k1c4bgY=/">layout</a> for more info
+## Setup
 
-  <b>Current Status:</b> creating barebones shell of user API in JS
+1. Install [Node](https://nodejs.org/en/download/package-manager/)
+2. Install and configure [PostgreSQL](https://www.postgresql.org/docs/9.5/static/tutorial-install.html)
+3. Configure `config.json` appropriately
 
-## Configure development environment
----
+## Documentation  
+### Endpoints  
 
-### 1. Dot-env
+Every response contains a `code` corresponding to a valid HTTP, a `msg` containing a valid HTTP message, and a `data` object which is documented per endpoint & method below.  
 
-The node module `dotenv` provides an easy way to configure environment variables to our node app. Dot-env expects a file `.env` in the root directory of the app, and there is a file `sample.env` with which to model this after. `.env` shouldn't ever be checked into VC as it may contain confidential information (passwords, private keys, etc.)
+**Endpoint:** `/user`  
+**Methods:**
+- `POST`  
+ **Description:** create a new user  
+ **Authentication:** none  
+ **Request:**
+  - username (string {32}; **required**)
+  - email (string {50})
+  - first_name (string {32}; **required**)
+  - last_name (string {32}; **required**)
+  - password (string {8-120}; **required**)  
 
-### 2. Database
+ **Response:**  
+   - token (string)
 
-1. Install and configure Postgres (https://www.postgresql.org/download/)
-2. Configure `config/database.json` with database information. (https://www.npmjs.com/package/db-migrate)
-4. Ensure environment variables are configured (`DB_URI`, etc.) prior to running app
+**Endpoint:** `/user/login`  
+**Methods:**  
+- `POST`  
+ **Description:** generate a new authentication token  
+ **Authentication:** none  
+ **Request:**  
+  - username (string {32}; **required**)
+  - password (string {8-120}; **required**)  
+  
+ **Response:**
+  - token (string)
 
-#### 2.1 Migrations
+**Endpoint:** `/user/logout`  
+**Methods:**
+- `DELETE`  
+ **Description:** delete the authentication token that was sent alongside the request  
+ **Authentication:** token  
+ **Request:**  
+ **Response:**  
 
-Migrations can be run via the convenience scripts (`scripts/migrate_up.sh`, etc.) or directly with `db-migrate` (https://github.com/db-migrate/node-db-migrate)
+**Endpoint:** `/user/<username>/feed`  
+**Methods:**
+- `POST`  
+ **Description:** create a new feed  
+ **Authentication:** token  
+ **Request:**  
+  - name (string {32}; **required**)  
 
-#### 2.2 Seeding
+ **Response:** 
+ 
+**Endpoint:** `/user/<username>/feed/<feed name>`  
+**Methods:**
+- `POST`  
+ **Description:** add a new plugin to the specified feed. Use `raw` and pass `url` in the data object to receive raw HTML.  
+ **Authentication:** token  
+ **Request:**  
+  - type (string {64}; **required**)  
+  - data (object; **required**)  
 
-The database is seeded from `config/seeds.sql`. This can be run directly through Postgres or with the convenience script `scripts/seed.sh`
+ **Response:**  
+- `DELETE`  
+ **Description:** remove a plugin from the specified feed. **NOT IMPLEMENTED**  
+ **Authentication:** token  
+ **Request:**  
+ **Response:** 
+- `GET`  
+ **Description:** fetch a feed  
+ **Authentication:** token  
+ **Request:**  
+ **Response:**  
+  - plugins (array)  
+   
+### Authentication  
 
-!!! Don't forget to update the seed file if you change the schema !!!
+To authenticate with the server, simply pass the header `X-Aggregor-Token: <token>` along with every request that requires it.

@@ -14,8 +14,11 @@
     "url": "https://github.com/GatorCoding/aggregor_server"
   },
   "dependencies": {
+    "feedparser": "^1.1.5",
     "jsonwebtoken": "^7.1.9",
-    "pg": "6.1.0"
+    "pg": "6.1.0",
+    "request": "^2.79.0",
+    "through2": "^2.0.1"
   },
   "devDependencies": {
     "node-pg-migrate": "GatorCoding/node-pg-migrate#8119bd6c42dbd0287438f130d74e48a3d4879e70"
