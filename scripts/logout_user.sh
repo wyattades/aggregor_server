@@ -1,5 +1,4 @@
 #!/bin/bash
-curl -X POST \
-     -H 'Content-Type: application/json' \
+curl -X DELETE \
      -H "X-Aggregor-Token: $1" \
      localhost:3000/user/logout

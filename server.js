@@ -39,8 +39,7 @@ const ROUTES = {
   },
   user_logout: {
     endpoint: regexRoute('/user/logout'),
-    methods: ['POST'],
-    content_types: ['application/json'],
+    methods: ['DELETE'],
     authenticate: true,
     handle: (req, match, authInfo) => {
       return new Promise( (resolve, reject) => {
