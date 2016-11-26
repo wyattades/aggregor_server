@@ -79,7 +79,11 @@ function compileFeed(plugins, res) {
         pluginFeed = [];
 
     strm.on('data', (chunk) => {
-      pluginFeed.push(chunk);
+      if(Buffer.isBuffer(chunk)) {
+        pluginFeed.push(chunk.toString());
+      } else {
+        pluginFeed.push(chunk);
+      }
     }).on('end', () => {
       feed.plugins.push({
         type,
