@@ -2,7 +2,7 @@ exports.up = function(pgm) {
   let sql = `CREATE TABLE plugins (
     id SERIAL PRIMARY KEY,
     feed_id integer REFERENCES feeds ON DELETE CASCADE,
-    type char(64) NOT NULL,
+    type varchar(64) NOT NULL,
     data jsonb
   );
   

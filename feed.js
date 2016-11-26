@@ -67,7 +67,7 @@ exports.deleteFeed = function(userId, feedName) {
 };
 
 function compileFeed(plugins, res) {
-  let feed = { plugins: [] },
+  let feed = { code: 200, msg: "OK", data: {plugins: []} },
       pending = plugins.length;
 
   plugins.forEach((p) => {
@@ -85,7 +85,7 @@ function compileFeed(plugins, res) {
         pluginFeed.push(chunk);
       }
     }).on('end', () => {
-      feed.plugins.push({
+      feed.data.plugins.push({
         type,
         feed: pluginFeed
       });
@@ -128,7 +128,7 @@ exports.fetchFeed = function(userId, feedName, response) {
                 } else {
                   const plugins = res1.rows.map((p) => {
                     return {
-                      type: p.type.trim(),
+                      type: p.type,
                       data: p.data
                     };
                   });
