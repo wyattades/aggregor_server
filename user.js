@@ -121,6 +121,18 @@ exports.newUser = function(data) {
         return;
       }
 
+      // Max password length of 120 characters
+      const MAX_PASSWD_LENGTH = 120,
+            MIN_PASSWD_LENGTH = 8;
+
+      if(userInfo.password.length > 120) {
+        reject(responses.badRequest("Maximum password length is " + MAX_PASSWD_LENGTH + " characters"));
+        return;
+      } else if(userInfo.password.length < MIN_PASSWD_LENGTH) {
+        reject(responses.badRequest("Minimum password length is " + MIN_PASSWD_LENGTH + " characters"));
+        return;
+      }
+
       generateSalt().then( (salt) => {
         Promise.all([generateId(), generatePasswordHash(userInfo.password, salt)]).then( (vals) => {
           const [id, hash] = vals;
