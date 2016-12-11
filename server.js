@@ -167,18 +167,19 @@ function run(port) {
 
     res.setHeader('Access-Control-Allow-Origin', '*');
 
+    // Handle preflight request
+    if(req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.writeHead(200);
+      res.end();
+
+      return;
+    }
+
     if(!route) {
       respond(404, 'Not Found', 'No route ' + req.url);
       return;
-    } else {
-      if(req.method === 'OPTIONS') {
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-        res.writeHead(200);
-        res.end();
-
-        return;
-      }
     }
 
     if(route.authenticate) {
