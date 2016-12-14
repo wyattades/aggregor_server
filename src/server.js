@@ -1,7 +1,7 @@
 const http = require('http'),
       url = require('url');
 
-const config = require('./config'),
+const config = require('../config'),
       pg = require('./pg'),
       user = require('./user'),
       auth = require('./auth'),

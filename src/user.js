@@ -112,12 +112,12 @@ exports.newUser = function(data) {
         'first_name': [10, 32],
         'username': [1, 32],
         'password': [8, 120],
-        'email': [
       },
-        keys = Reflect.ownKeys(userInfo);
+        keys = Reflect.ownKeys(userInfo),
+        requiredKeys = Reflect.ownKeys(requiredInfo);
 
       var missing = [];
-      requiredInfo.forEach((i) => {
+      requiredKeys.forEach((i) => {
         let key = keys.find((k) => k === i);
         if(!key || !userInfo[key].trim().length)
           missing.push(i);
@@ -130,7 +130,6 @@ exports.newUser = function(data) {
 
       // TODO: finish checking lengths of data
       keys.forEach((k) => {
-        if(
       });
 
       generateSalt().then( (salt) => {
@@ -165,7 +164,7 @@ exports.newUser = function(data) {
       });
     }
   });
-}
+};
 
 exports.loginUser = function(data) {
   return new Promise( (resolve, reject) => {
@@ -198,7 +197,7 @@ exports.loginUser = function(data) {
       });
     }
   });
-}
+};
 
 exports.logoutUser = function(authInfo) {
   return new Promise( (resolve, reject) => {
@@ -209,8 +208,8 @@ exports.logoutUser = function(authInfo) {
       reject(err);
     });
   });
-}
+};
 
 exports.init = function(_pg) {
   pg = _pg;
-}
+};
