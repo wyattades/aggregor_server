@@ -170,7 +170,7 @@ function run(port) {
     // Handle preflight request
     if(req.method === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Aggregor-Token');
       res.writeHead(200);
       res.end();
 
