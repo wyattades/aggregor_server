@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "",
-    "start": "node server.js"
+    "start": "cd src; node server.js"
   },
   "repository": {
     "type": "git",
