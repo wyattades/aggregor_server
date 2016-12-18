@@ -116,6 +116,7 @@ exports.fetchFeed = function(userId, feedName, response) {
             reject(responses.internalError("Failed to load feed"));
           } else {
             if(res.rowCount === 0) {
+              done();
               reject(responses.badRequest("Couldn't find feed '" + feedName + "'"));
             } else if(res.rowCount === 1) {
               const feedId = res.rows[0].id;
@@ -138,6 +139,7 @@ exports.fetchFeed = function(userId, feedName, response) {
                 }
               });
             } else {
+              done();
               reject(responses.internalError("Duplicate matching feeds"));
             }
           }
