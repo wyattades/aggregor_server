@@ -150,6 +150,29 @@ exports.fetchFeed = function(userId, feedName, response) {
   });
 };
 
+exports.fetchFeeds = function(userId, response) {
+  return new Promise( (resolve, reject) => {
+    pg.pool().connect((err, client, done) => {
+      if(err) {
+        reject(responses.internalError("Failed to load feed names"));
+      } else {
+        client.query('SELECT name FROM feeds WHERE user_id = $1', [userId], (err, res) => {
+          if(err) {
+            done();
+            reject(responses.internalError("Failed to load feed names"));
+          } else {
+            response.writeHead(200);
+            response.write(JSON.stringify(res.rows));
+            response.end();
+            resolve({ handled: true});
+          }
+        });
+      }
+    });
+
+  });
+};
+
 //TODO: decide how to handle multiple plugins of the same type
 exports.addPlugin = function(userId, feedName, data) {
   return new Promise( (resolve, reject) => {

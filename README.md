@@ -29,7 +29,7 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
   - first_name (string {32}; **required**)
   - last_name (string {32}; **required**)
   - password (string {8-120}; **required**)  
-
+  
  **Response:**  
    - token (string)
 
@@ -40,7 +40,7 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Authentication:** none  
  **Request:**  
   - username (string {32}; **required**)
-  - password (string {8-120}; **required**)  
+  - password (string {8-120}; **required**)
   
  **Response:**
   - token (string)
@@ -52,7 +52,7 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Authentication:** token  
  **Request:**  
  **Response:**  
-
+ 
 **Endpoint:** `/user/<username>/feed`  
 **Methods:**
 - `POST`  
@@ -60,24 +60,34 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Authentication:** token  
  **Request:**  
   - name (string {32}; **required**)  
-
+  
+ **Response:**  
+ 
+- `GET`  
+ **Description:** fetch list of feed names  
+ **Authentication:** token  
+ **Request:**  
  **Response:** 
+  - names (array)
  
 **Endpoint:** `/user/<username>/feed/<feed name>`  
 **Methods:**
+
 - `POST`  
  **Description:** add a new plugin to the specified feed. Use `raw` and pass `url` in the data object to receive raw HTML.  
  **Authentication:** token  
  **Request:**  
   - type (string {64}; **required**)  
   - data (object; **required**)  
-
+  
  **Response:**  
+ 
 - `DELETE`  
- **Description:** remove a plugin from the specified feed. **NOT IMPLEMENTED**  
+ **Description:** remove a plugin from the specified feed  
  **Authentication:** token  
  **Request:**  
  **Response:** 
+ 
 - `GET`  
  **Description:** fetch a feed  
  **Authentication:** token  

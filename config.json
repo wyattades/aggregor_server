@@ -1,6 +1,6 @@
 {
-  "HOST_PORT": 3000,
+  "HOST_PORT": 8000,
   "DB_URI": "postgres://aggregor@localhost/aggregor",
-  "PG_POOL_SIZE": 10,
+  "PG_POOL_SIZE": 20,
   "DB_TIMEOUT": 30000
 }

@@ -1,5 +1,7 @@
 # Custom files
 node_modules/
+*.sublime-project
+*.sublime-workspace
 
 # Windows image file caches
 Thumbs.db

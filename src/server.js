@@ -76,6 +76,16 @@ const ROUTES = {
       });
     }
   },
+  fetch_feeds: {
+    endpoint: regexRoute('/user/:user_name/feed'),
+    methods: ['GET'],
+    authenticate: true,
+    handle: (req, match, authInfo, res) => {
+      return new Promise( (resolve, reject) => {
+        feed.fetchFeeds(authInfo.user.id, res).then(resolve, reject);
+      });
+    }
+  },
   add_plugin: {
     endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
     methods: ['POST'],
@@ -95,7 +105,7 @@ const ROUTES = {
     authenticate: true,
     handle: (req, match, authInfo) => {
       return new Promise( (resolve, reject) => {
-        
+        resolve();
       });
     }
   }
@@ -169,7 +179,7 @@ function run(port) {
 
     // Handle preflight request
     if(req.method === 'OPTIONS') {
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Aggregor-Token');
       res.writeHead(200);
       res.end();
