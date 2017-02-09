@@ -21,6 +21,20 @@ const ROUTES = {
       });
     }
   },
+
+  user_delete: {
+    endpoint: regexRoute('/user'),
+    methods: ['DELETE'],
+    content_types: ['application/json'],
+    handle: (req) => {
+      return new Promise( (resolve, reject) => {
+        utils.aggregateStream(req).then( (data) => {
+          user.deleteUser(data.toString()).then(resolve, reject);
+        });
+      });
+    }
+  },
+
   user_login: {
     endpoint: regexRoute('/user/login'),
     methods: ['POST'],
@@ -33,6 +47,7 @@ const ROUTES = {
       });
     }
   },
+
   user_logout: {
     endpoint: regexRoute('/user/logout'),
     methods: ['DELETE'],
@@ -43,6 +58,18 @@ const ROUTES = {
       });
     }
   },
+
+  fetch_feeds: {
+    endpoint: regexRoute('/user/:user_name/feed'),
+    methods: ['GET'],
+    authenticate: true,
+    handle: (req, match, authInfo, res) => {
+      return new Promise( (resolve, reject) => {
+        feed.fetchFeeds(authInfo.user.id, res).then(resolve, reject);
+      });
+    }
+  },
+
   create_feed: {
     endpoint: regexRoute('/user/:user_name/feed'),
     methods: ['POST'],
@@ -56,6 +83,7 @@ const ROUTES = {
       });
     }
   },
+
   delete_feed: {
     endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
     methods: ['DELETE'],
@@ -66,26 +94,18 @@ const ROUTES = {
       });
     }
   },
-  fetch_feed: {
+
+  fetch_plugins: {
     endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
     methods: ['GET'],
     authenticate: true,
     handle: (req, match, authInfo, res) => {
       return new Promise( (resolve, reject) => {
-        feed.fetchFeed(authInfo.user.id, match[2], res).then(resolve, reject);
+        feed.fetchPlugins(authInfo.user.id, match[2], res).then(resolve, reject);
       });
     }
   },
-  fetch_feeds: {
-    endpoint: regexRoute('/user/:user_name/feed'),
-    methods: ['GET'],
-    authenticate: true,
-    handle: (req, match, authInfo, res) => {
-      return new Promise( (resolve, reject) => {
-        feed.fetchFeeds(authInfo.user.id, res).then(resolve, reject);
-      });
-    }
-  },
+
   add_plugin: {
     endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
     methods: ['POST'],
@@ -99,23 +119,60 @@ const ROUTES = {
       });
     }
   },
+
+  fetch_plugin: {
+    endpoint: regexRoute('/user/:user_name/feed/:feed_name/:plugin_id'),
+    methods: ['GET'],
+    authenticate: true,
+    handle: (req, match, authInfo, res) => {
+      return new Promise( (resolve, reject) => {
+        feed.fetchPlugin(authInfo.user.id, match[2], match[3], res).then(resolve, reject);
+      });
+    }
+  },
+
+  update_plugin: {
+    endpoint: regexRoute('/user/:user_name/feed/:feed_name/:plugin_id'),
+    methods: ['PUT'],
+    authenticate: true,
+    content_types: ['application/json'],
+    handle: (req, match, authInfo, res) => {
+      return new Promise( (resolve, reject) => {
+        utils.aggregateStream(req).then( (data) => {
+          feed.updatePlugin(authInfo.user.id, match[2], match[3], data.toString()).then(resolve, reject);
+        });
+      });
+    }
+  },
+
   remove_plugin: {
-    endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
+    endpoint: regexRoute('/user/:user_name/feed/:feed_name/:plugin_id'),
     methods: ['DELETE'],
     authenticate: true,
     handle: (req, match, authInfo) => {
       return new Promise( (resolve, reject) => {
-        resolve();
+        feed.removePlugin(authInfo.user.id, match[2], match[3]).then(resolve, reject);
       });
     }
-  }
+  },
+  
+  fetch_available_plugins: {
+    endpoint: regexRoute('/plugins'),
+    methods: ['GET'],
+    handle: (req, match, authInfo, res) => {
+      return new Promise((resolve, reject) => {
+        feed.availablePlugins(res).then(resolve, reject);
+       });
+     }
+   }
 };
 
 function regexRoute(rt) {
   const MACROS = {
     //user_id: '([a-z0-9]{8})',
     user_name: '([a-zA-Z0-9]{4,32})',
-    feed_name: '([a-zA-Z0-9]{1,32})'
+    feed_name: '([a-zA-Z0-9]{1,32})',
+    plugin_id: '([a-z0-9]{8})'
   };
 
   let re = `^${rt}/?$`
@@ -215,6 +272,7 @@ function run(port) {
       handle();
     }
 
+    //TODO: instead of responding in feed.js, why don't we pass our response into resolve(response)?
     function handle() {
       route.handle(req, match, authInfo, res).then(
         (resp) => {

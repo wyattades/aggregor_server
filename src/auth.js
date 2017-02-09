@@ -26,7 +26,7 @@ exports.generateSalt = function() {
   return new Promise( (resolve, reject) => {
     randomBytes(SALT_SIZE).then( (bytes) => resolve(bytes), (err) => reject(err) );
   });
-}
+};
 
 exports.generatePasswordHash = function(raw, salt) {
   return new Promise( (resolve, reject) => {
@@ -34,7 +34,7 @@ exports.generatePasswordHash = function(raw, salt) {
       resolve(key.toString('hex'));
     });
   });
-}
+};
 
 function generateAuthToken() {
   return new Promise( (resolve, reject) => {
@@ -78,7 +78,7 @@ exports.newAuthToken = function(userId) {
       }
     );
   });
-}
+};
 
 exports.deleteAuthToken = function(tokenText) {
   return new Promise( (resolve, reject) => {
@@ -98,7 +98,7 @@ exports.deleteAuthToken = function(tokenText) {
       }
     });
   });
-}
+};
 
 exports.validateAuthToken = function(token) {
   return new Promise( (resolve, reject) => {
@@ -118,8 +118,8 @@ exports.validateAuthToken = function(token) {
       });
     });
   });
-}
+};
 
 exports.init = function(_pg) {
   pg = _pg;
-}
+};

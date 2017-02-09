@@ -8,6 +8,8 @@
         "sourceType": "module"
     },
     "rules": {
+        "no-unused-vars": "off",
+        "no-inner-declarations": "off",
         "linebreak-style": [
             "error",
             "unix"

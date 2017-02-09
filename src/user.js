@@ -210,6 +210,13 @@ exports.logoutUser = function(authInfo) {
   });
 };
 
+//TODO: require username and password or just auth token?
+exports.deleteUser = function(userId) {
+  return new Promise((resolve, reject) => {
+    reject();
+  });
+};
+
 exports.init = function(_pg) {
   pg = _pg;
 };

@@ -1,6 +1,6 @@
 exports.up = function(pgm) {
   let sql = `CREATE TABLE plugins (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     feed_id integer REFERENCES feeds ON DELETE CASCADE,
     type varchar(64) NOT NULL,
     data jsonb
