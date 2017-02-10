@@ -2,7 +2,7 @@ const exec = require('child_process').exec;
 
 const setup = process.argv[2] === 'setup'; 
 
-const USER = 'username',
+const USER = 'username123',
       PASS = 'password123',
       FIRST = 'firstname',
       LAST = 'lastname',
@@ -19,8 +19,10 @@ const command = (args) => {
         let printString = args[0];
         for (let i = 1; i < args.length; i++) {
             commandString += ' ' + args[i];
-            if (args[i].length > 30) {
+            if (args[i].length > 45) {
                 printString += ' [token]';
+            } else if (args[i].length > 30) {
+                printString += ' [id]';
             } else {
                 printString += ' ' + args[i];
             }
@@ -74,17 +76,17 @@ const loginUser = () => {
 })
 .then((res) => {
     plugins = res.data.plugins;
-    console.log("PLUGINS:", plugins);
+    console.log("plugins=", plugins);
     return command(['fetch_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
 })
 .then((res) => {
-    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
+    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, { url: PLUGIN_URL, newData: true}]);
 })
 .then((res) => {
     return command(['delete_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
 })
 .then((res) => {
-    console.log("ENTRIES:", res.data);
+    console.log("entries=", res.data);
     return command(['delete_feed', X_Aggregor_Token, USER, FEED_NAME]);
 })
 .then((res) => {
@@ -97,5 +99,5 @@ const loginUser = () => {
     console.log("Successfully used all routes");
 })
 .catch((err) => {
-    console.error("ERROR:", err);
+    console.error("\nERROR:", err);
 });

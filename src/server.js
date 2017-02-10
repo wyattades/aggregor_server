@@ -172,7 +172,7 @@ function regexRoute(rt) {
     //user_id: '([a-z0-9]{8})',
     user_name: '([a-zA-Z0-9]{4,32})',
     feed_name: '([a-zA-Z0-9]{1,32})',
-    plugin_id: '([a-z0-9]{8})'
+    plugin_id: '([a-z0-9-]{36})'
   };
 
   let re = `^${rt}/?$`
@@ -236,7 +236,7 @@ function run(port) {
 
     // Handle preflight request
     if(req.method === 'OPTIONS') {
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Aggregor-Token');
       res.writeHead(200);
       res.end();
@@ -245,7 +245,7 @@ function run(port) {
     }
 
     if(!route) {
-      respond(404, 'Not Found', 'No route ' + req.url);
+      respond(404, 'Not Found', 'No route: ' + req.method + ' ' + req.url);
       return;
     }
 

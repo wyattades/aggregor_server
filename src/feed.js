@@ -183,7 +183,6 @@ exports.addPlugin = function (userId, feedName, data) {
       client.query('SELECT id FROM feeds WHERE user_id = $1 AND name = $2', [userId, feedName], (err, res) => {
         if (err) {
           done();
-          console.log("err", err);
           reject(responses.internalError("Failed to add plugin"));
         } else {
           if (res.rowCount == 1) {
@@ -191,11 +190,11 @@ exports.addPlugin = function (userId, feedName, data) {
               type = data.type,
               info = data.data;
 
-            client.query('INSERT INTO plugins VALUES (DEFAULT, $1, $2, $3) ON CONFLICT (user_id, feed_id) DO NOTHING', [feedId, type, info], (err1) => {
+            // NOTE: handling multiple plugins of same type/url/plugin??? 'ON CONFLICT (feed_id, ?url?) DO NOTHING'
+            client.query('INSERT INTO plugins VALUES (DEFAULT, $1, $2, $3)', [feedId, type, info], (err1) => {
               done();
 
               if (err1) {
-                console.log("err1", err1);
                 reject(responses.internalError("Failed to add plugin"));
               } else {
                 resolve({
@@ -229,16 +228,17 @@ exports.fetchPlugin = function (userId, feedName, pluginId, response) {
               if (err1) {
                 reject(responses.internalError("Failed to fetch plugin"));
               } else {
-                if (res1.rowCount === 0) {
+                if (res1.rowCount != 1) {
                   reject(responses.badRequest("No plugin with id '" + pluginId + "' in feed '" + feedName + "'"));
                 } else {
 
                   const {
                     type,
                     data
-                  } = res1[0];
+                  } = res1.rows[0];
+                  console.log(type, data);
 
-                  doPluginThings(type, data, (entries) => {
+                  doPluginThings(type, data).then((entries) => {
                     const responseData = {
                       code: 200,
                       msg: "OK",
@@ -254,7 +254,7 @@ exports.fetchPlugin = function (userId, feedName, pluginId, response) {
                       handled: true
                     });
                   }, (err2) => {
-                    reject(responses.internalError("FAiled to parse selected plugin"));
+                    reject(responses.internalError("Failed to parse selected plugin"));
                   });
                 }
               }
@@ -268,7 +268,7 @@ exports.fetchPlugin = function (userId, feedName, pluginId, response) {
   });
 };
 
-function doPluginThings() {
+function doPluginThings(type, data) {
   return new Promise((resolve, reject) => {
     reject();
   });
