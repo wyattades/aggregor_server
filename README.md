@@ -24,13 +24,14 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Description:** create a new user  
  **Authentication:** none  
  **Request:**
+
   - username (string {32}; **required**)
   - email (string {50})
   - first_name (string {32}; **required**)
   - last_name (string {32}; **required**)
   - password (string {8-120}; **required**)  
   
- **Response:**  
+  **Response:**  
    - token (string)
 
 **Endpoint:** `/user/login`  
@@ -42,7 +43,7 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
   - username (string {32}; **required**)
   - password (string {8-120}; **required**)
   
- **Response:**
+  **Response:**
   - token (string)
 
 **Endpoint:** `/user/logout`  
@@ -61,7 +62,7 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Request:**  
   - name (string {32}; **required**)  
   
- **Response:**  
+  **Response:**  
  
 - `GET`  
  **Description:** fetch list of feed names  
@@ -79,7 +80,8 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Request:**  
   - type (string {64}; **required**)  
   - data (object; **required**)  
- **Response:**
+ 
+  **Response:**
   - entries (array)
 
 - `GET`  

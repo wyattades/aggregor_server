@@ -96,6 +96,7 @@ exports.fetchFeeds = function (userId, response) {
                 feedNames: res.rows.map((p) => p.name)
               }
             };
+            // TODO: should feedName contain all that whitespace?
 
             response.writeHead(200);
             response.write(JSON.stringify(responseData));
@@ -182,6 +183,7 @@ exports.addPlugin = function (userId, feedName, data) {
       client.query('SELECT id FROM feeds WHERE user_id = $1 AND name = $2', [userId, feedName], (err, res) => {
         if (err) {
           done();
+          console.log("err", err);
           reject(responses.internalError("Failed to add plugin"));
         } else {
           if (res.rowCount == 1) {
@@ -189,10 +191,11 @@ exports.addPlugin = function (userId, feedName, data) {
               type = data.type,
               info = data.data;
 
-            client.query('INSERT INTO plugins VALUES (DEFAULT, $1, $2, $3) ON CONFLICT (user_id, name) DO NOTHING', [feedId, type, info], (err1) => {
+            client.query('INSERT INTO plugins VALUES (DEFAULT, $1, $2, $3) ON CONFLICT (user_id, feed_id) DO NOTHING', [feedId, type, info], (err1) => {
               done();
 
               if (err1) {
+                console.log("err1", err1);
                 reject(responses.internalError("Failed to add plugin"));
               } else {
                 resolve({
