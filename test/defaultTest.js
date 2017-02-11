@@ -80,7 +80,10 @@ const loginUser = () => {
     return command(['fetch_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
 })
 .then((res) => {
-    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, { url: PLUGIN_URL, newData: true}]);
+    console.log("entries=", res.data);
+    const newData = JSON.stringify({ url: PLUGIN_URL, newData: true });
+    console.log("[" + newData + "]");
+    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, ]);
 })
 .then((res) => {
     return command(['delete_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
