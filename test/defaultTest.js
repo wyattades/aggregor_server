@@ -28,9 +28,8 @@ const command = (args) => {
             }
         }
 
-        // console.log("cmd: " + printString);
+        console.log("cmd: " + printString);
         exec(commandString, (err, out, code) => {
-            console.log(code);
             if (err) {
                 reject("Error while running: " + commandString + ":" + code);
             } else {
@@ -63,7 +62,6 @@ const loginUser = () => {
     });
 };
 
-
 (setup ? setupUserAccount() : loginUser())
 .then((res) => {
     return command(['fetch_feeds', X_Aggregor_Token, USER, FEED_NAME]);
@@ -78,14 +76,15 @@ const loginUser = () => {
 .then((res) => {
     plugins = res.data.plugins;
     console.log("plugins=", plugins);
-    
+
     return command(['fetch_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
 })
 .then((res) => {
     console.log("entries=", res.data);
 
-    const newData = JSON.stringify({ type: "raw", data: { url: PLUGIN_URL, newData: "true" } });
-    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, newData]);
+    // const newData = JSON.stringify({ type: "raw", data: { url: PLUGIN_URL, newData: "true" } });
+    // console.log("NEWDATA: " + newData);
+    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, "https://www.reddit.com"]);
 })
 .then((res) => {
     return command(['delete_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);

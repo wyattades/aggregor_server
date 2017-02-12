@@ -213,7 +213,9 @@ exports.logoutUser = function(authInfo) {
 //TODO: require username and password or just auth token?
 exports.deleteUser = function(userId) {
   return new Promise((resolve, reject) => {
-    reject();
+    resolve({data:{
+      msg: "This route does nothing yet"
+    }});
   });
 };
 

@@ -310,7 +310,7 @@ exports.updatePlugin = function (userId, feedName, pluginId, data) {
           const type = data.type,
             info = data.data;
 
-          client.query('UPDATE plugins SET type = $1, data = $2 WHERE id = $3, feed_id = $4', [type, info, pluginId, feedId], (err, res) => {
+          client.query('UPDATE plugins SET type = $1, data = $2 WHERE id = $3 AND feed_id = $4', [type, info, pluginId, feedId], (err, res) => {
             done();
             if (err) {
               reject(responses.internalError("Failed to update plugin"));
@@ -337,9 +337,10 @@ exports.removePlugin = function (userId, feedName, pluginId) {
   return new Promise((resolve, reject) => {
     pg.pool().connect((err, client, done) => {
       getFeedId(client, userId, feedName).then((feedId) => {
-        client.query('DELETE FROM plugins WHERE id = $3, feed_id = $4', [pluginId, feedId], (err, res) => {
+        client.query('DELETE FROM plugins WHERE id = $1 AND feed_id = $2', [pluginId, feedId], (err, res) => {
           done();
           if (err) {
+            console.log(err);
             reject(responses.internalError("Failed to delete plugin"));
           } else if (res.rowCount === 0) {
             reject(responses.badRequest("No plugin with id '" + pluginId + "' in feed '" + feedName + "'"));
