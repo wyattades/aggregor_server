@@ -19,21 +19,22 @@ const command = (args) => {
         let printString = args[0];
         for (let i = 1; i < args.length; i++) {
             commandString += ' ' + args[i];
-            if (args[i].length > 45) {
-                printString += ' [token]';
-            } else if (args[i].length > 30) {
+            if (/[a-z0-9-]{36}/.test(args[i])) {
                 printString += ' [id]';
+            } else if (/[a-zA-Z0-9_.]{64}/.test(args[i])) {
+                printString += ' [token]';
             } else {
                 printString += ' ' + args[i];
             }
         }
 
-        console.log("cmd: " + printString);
-        exec(commandString, (err, stdout, stderr) => {
+        // console.log("cmd: " + printString);
+        exec(commandString, (err, out, code) => {
+            console.log(code);
             if (err) {
-                reject("Error while running: " + commandString + ":" + stdout + stderr);
+                reject("Error while running: " + commandString + ":" + code);
             } else {
-                const res = JSON.parse(stdout);
+                const res = JSON.parse(out);
                 if (res.code === 200) {
                     resolve(res);
                 } else {
@@ -48,7 +49,7 @@ const setupUserAccount = () => {
     return command(['new_user', USER, PASS, EMAIL, FIRST, LAST])
     .then((res) => {
         X_Aggregor_Token = res.data.token;
-        console.log(X_Aggregor_Token);
+        // console.log(X_Aggregor_Token);
         return command(['create_feed', X_Aggregor_Token, USER, FEED_NAME]);
     });
 };
@@ -57,7 +58,7 @@ const loginUser = () => {
     return command(['login_user', USER, PASS])
     .then((res) => {
         X_Aggregor_Token = res.data.token;
-        console.log(X_Aggregor_Token);
+        // console.log(X_Aggregor_Token);
         return Promise.resolve();
     });
 };
@@ -77,13 +78,14 @@ const loginUser = () => {
 .then((res) => {
     plugins = res.data.plugins;
     console.log("plugins=", plugins);
+    
     return command(['fetch_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
 })
 .then((res) => {
     console.log("entries=", res.data);
-    const newData = JSON.stringify({ url: PLUGIN_URL, newData: true });
-    console.log("[" + newData + "]");
-    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, ]);
+
+    const newData = JSON.stringify({ type: "raw", data: { url: PLUGIN_URL, newData: "true" } });
+    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, newData]);
 })
 .then((res) => {
     return command(['delete_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
