@@ -250,8 +250,6 @@ function run(port) {
       return;
     }
 
-    console.log(req.method + ' ' + req.url);
-
     if(route.authenticate) {
       const token = req.headers['x-aggregor-token'];
       if(token) {
@@ -260,7 +258,6 @@ function run(port) {
           authInfo.token = token;
           handle();
         }, (err) => {
-          console.log(err);
           respond(err.code, err.msg, err.data);
         });
       } else {
@@ -286,6 +283,5 @@ function run(port) {
   }).listen(port);
 }
 
-process.on('unhandledRejection', r => console.log(r));
 init();
 run(config.HOST_PORT);
