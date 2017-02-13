@@ -26,10 +26,11 @@ const ROUTES = {
     endpoint: regexRoute('/user'),
     methods: ['DELETE'],
     content_types: ['application/json'],
-    handle: (req) => {
+    authenticate: true,
+    handle: (req, match, authInfo) => {
       return new Promise( (resolve, reject) => {
         utils.aggregateStream(req).then( (data) => {
-          user.deleteUser(data.toString()).then(resolve, reject);
+          user.deleteUser(authInfo, data.toString()).then(resolve, reject);
         });
       });
     }
@@ -249,22 +250,19 @@ function run(port) {
       return;
     }
 
+    console.log(req.method + ' ' + req.url);
+
     if(route.authenticate) {
       const token = req.headers['x-aggregor-token'];
       if(token) {
-        auth.validateAuthToken(token).then(
-          (userId) => {
-            user.getAuthedUser(userId).then(
-              (user) => {
-                authInfo.user = user;
-                authInfo.token = token;
-                handle();
-              },
-              (err) => respond(err.code, err.msg, err.data)
-            );
-          },
-          (err) => respond(err.code, err.msg, err.data)
-        );
+        user.getAuthedUser(token).then((user) => {
+          authInfo.user = user;
+          authInfo.token = token;
+          handle();
+        }, (err) => {
+          console.log(err);
+          respond(err.code, err.msg, err.data);
+        });
       } else {
         respond(401, 'Unauthorized', '');
       }
@@ -288,5 +286,6 @@ function run(port) {
   }).listen(port);
 }
 
+process.on('unhandledRejection', r => console.log(r));
 init();
 run(config.HOST_PORT);

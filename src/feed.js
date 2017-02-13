@@ -3,25 +3,30 @@ const responses = require('./responses'),
 
 var pg;
 
-// const respondSuccess = (response, data) => {
-//   response.writeHead(200);
-//   response.write(JSON.stringify({
-//     code: 200,
-//     msg: "OK",
-//     data: data
-//   }));
-//   response.end();
-// };
+//TODO: replace pgpool connect with promise
+/*
+e.g.
 
-// const pgConnect = () => {
+pool
+  .connect()
+  .then(client => {
+    return client
+      .query('SELECT $1::int AS "clientCount"', [client.count])
+      .then(res => console.log(res.rows[0].clientCount)) // outputs 0
+      .then(() => client)
+  })
+  .then(client => client.release())
+
+*/
+
+// const asyncParse = (string) => {
 //   return new Promise((resolve, reject) => {
-//     pg.pool().connect((err, client, done) => {
-//       if (err) {
-//         reject(responses.internalError("Failed to connect to database"));
-//       } else {
-//         resolve(client, done);
-//       }
-//     });
+//     let data;
+//     try {
+//       resolve(JSON.parse(string));
+//     } catch(e) {
+//       reject();
+//     }
 //   });
 // };
 
@@ -57,18 +62,15 @@ exports.createFeed = function (userId, data) {
     try {
       data = JSON.parse(data);
     } catch (e) {
-      reject(responses.badRequest("Bad request data in creating feed"));
-      return;
+      return reject(responses.badRequest("Bad request data in creating feed"));
     }
 
     if (data.name) {
       if (data.name.length > 32) {
-        reject(responses.badRequest('Feed name has max length of 32 characters'));
-        return;
+        return reject(responses.badRequest('Feed name has max length of 32 characters'));
       }
     } else {
-      reject(responses.badRequest('Must provide name for feed'));
-      return;
+      return reject(responses.badRequest('Must provide name for feed'));
     }
 
     pg.pool().connect((err, client, done) => {
@@ -98,7 +100,7 @@ exports.deleteFeed = function (userId, feedName) {
   return new Promise((resolve, reject) => {
     pg.pool().connect((err, client, done) => {
       if (err) {
-        reject(responses.internalError('Failed to connect to DB while creating new feed')); //TODO copy this elsewhere
+        reject(responses.internalError('Failed to connect to database')); //TODO copy this elsewhere
       } else {
         client.query('DELETE FROM feeds WHERE user_id = $1::text AND name = $2::text', [userId, feedName], (err, res) => {
           done();
@@ -126,8 +128,8 @@ exports.fetchFeeds = function (userId, response) {
         reject(responses.internalError("Failed to load feed names"));
       } else {
         client.query('SELECT name FROM feeds WHERE user_id = $1', [userId], (err, res) => {
+          done();
           if (err) {
-            done();
             reject(responses.internalError("Failed to load feed names"));
           } else {
             const responseData = {
@@ -201,13 +203,11 @@ exports.addPlugin = function (userId, feedName, data) {
     try {
       data = JSON.parse(data);
     } catch (e) {
-      reject(responses.badRequest("Bad request data in adding plugin"));
-      return;
+      return reject(responses.badRequest("Bad request data in adding plugin"));
     }
 
     if (!plugin.validPluginType(data.type)) {
-      reject(responses.badRequest("Invalid plugin type '" + data.type + "'"));
-      return;
+      return reject(responses.badRequest("Invalid plugin type '" + data.type + "'"));
     }
 
     pg.pool().connect((err, client, done) => {
@@ -294,17 +294,16 @@ exports.updatePlugin = function (userId, feedName, pluginId, data) {
     try {
       data = JSON.parse(data);
     } catch(e) {
-      reject(responses.badRequest("Bad request data in updating plugin"));
+      return reject(responses.badRequest("Bad request data in updating plugin"));
     }
 
     if (!plugin.validPluginType(data.type)) {
-      reject(responses.badRequest("Invalid plugin type '" + data.type + "'"));
-      return;
+      return reject(responses.badRequest("Invalid plugin type '" + data.type + "'"));
     }
 
     pg.pool().connect((err, client, done) => {
       if (err) {
-        reject(responses.internalError("Failed to update plugin"));
+        reject(responses.internalError("Failed to connect to database"));
       } else {
         getFeedId(client, userId, feedName).then((feedId) => {
           const type = data.type,
@@ -336,26 +335,29 @@ exports.updatePlugin = function (userId, feedName, pluginId, data) {
 exports.removePlugin = function (userId, feedName, pluginId) {
   return new Promise((resolve, reject) => {
     pg.pool().connect((err, client, done) => {
-      getFeedId(client, userId, feedName).then((feedId) => {
-        client.query('DELETE FROM plugins WHERE id = $1 AND feed_id = $2', [pluginId, feedId], (err, res) => {
+      if (err) {
+        reject(responses.internalError("Failed to connect to database"));
+      } else {
+        getFeedId(client, userId, feedName).then((feedId) => {
+          client.query('DELETE FROM plugins WHERE id = $1 AND feed_id = $2', [pluginId, feedId], (err, res) => {
+            done();
+            if (err) {
+              reject(responses.internalError("Failed to delete plugin"));
+            } else if (res.rowCount === 0) {
+              reject(responses.badRequest("No plugin with id '" + pluginId + "' in feed '" + feedName + "'"));
+            } else if (res.rowCount > 1) {
+              reject(responses.internalError("Multiple plugins with the same id"));
+            } else {
+              resolve({
+                data: {}
+              });
+            }
+          });
+        }, (err) => {
           done();
-          if (err) {
-            console.log(err);
-            reject(responses.internalError("Failed to delete plugin"));
-          } else if (res.rowCount === 0) {
-            reject(responses.badRequest("No plugin with id '" + pluginId + "' in feed '" + feedName + "'"));
-          } else if (res.rowCount > 1) {
-            reject(responses.internalError("Multiple plugins with the same id"));
-          } else {
-            resolve({
-              data: {}
-            });
-          }
+          reject(err);
         });
-      }, (err) => {
-        done();
-        reject(err);
-      });
+      }
     });
   });
 };
@@ -369,6 +371,7 @@ exports.availablePlugins = function (response) {
         plugins: plugin.availablePlugins
       }
     };
+    //TODO: test out putting response data in resolve with this function
     response.writeHead(200);
     response.write(JSON.stringify(responseData));
     response.end();

@@ -80,42 +80,37 @@ exports.newAuthToken = function(userId) {
   });
 };
 
-exports.deleteAuthToken = function(tokenText) {
-  return new Promise( (resolve, reject) => {
+exports.deleteAuthToken = function(client, tokenText) {
+  return new Promise((resolve, reject) => {
     pg.pool().connect((err, client, done) => {
-      if(err) {
-        reject(responses.internalError(err));
-      } else {
-        client.query('DELETE FROM auth_tokens WHERE token = $1', [tokenText], (err, res) => {
-          done();
-
-          if(err) {
-            reject(responses.internalError(err));
-          } else {
-            resolve();
-          }
-        });
-      }
+      client.query('DELETE FROM auth_tokens WHERE token = $1', [tokenText], (err, res) => {
+        done();
+        if (err) {
+          reject(responses.internalError(err));
+        } else if (res.rowCount === 0) {
+          reject(responses.badRequest("Given logout token is not valid"));
+        } else if (res.rowCount > 1) {
+          reject(responses.internalError("Duplicate matching tokens in logout"));
+        } else {
+          resolve();
+        }
+      });
     });
   });
 };
 
-exports.validateAuthToken = function(token) {
-  return new Promise( (resolve, reject) => {
-    pg.pool().connect((err, client, done) => {
-      client.query('SELECT * FROM auth_tokens WHERE token = $1', [token], (err, res) => {
-        if(err) {
-          reject(responses.internalError({data: err}));
-          done();
-        } else {
-          if(res.rows.length) {
-            const tokenInfo = res.rows[0];
-            resolve(tokenInfo.user_id);
-          } else {
-            reject(responses.unauthorized());
-          }
-        }
-      });
+exports.validateAuthToken = function(client, token) {
+  return new Promise((resolve, reject) => {
+    client.query('SELECT * FROM auth_tokens WHERE token = $1', [token], (err, res) => {
+      if (err) {
+        reject(responses.internalError(err));
+      } else if (res.rowCount === 0) {
+        reject(responses.unauthorized());
+      } else if (res.rowCount > 1) {
+        reject(responses.internalError("Multiple matching auth tokens!"));
+      } else {
+        resolve(res.rows[0].user_id);
+      }
     });
   });
 };

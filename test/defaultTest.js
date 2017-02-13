@@ -1,7 +1,5 @@
 const exec = require('child_process').exec;
 
-const setup = process.argv[2] === 'setup'; 
-
 const USER = 'username123',
       PASS = 'password123',
       FIRST = 'firstname',
@@ -44,62 +42,80 @@ const command = (args) => {
     });
 };
 
-const setupUserAccount = () => {
-    return command(['new_user', USER, PASS, EMAIL, FIRST, LAST])
-    .then((res) => {
-        X_Aggregor_Token = res.data.token;
-        // console.log(X_Aggregor_Token);
-        return command(['create_feed', X_Aggregor_Token, USER, FEED_NAME]);
-    });
-};
-
 const loginUser = () => {
     return command(['login_user', USER, PASS])
     .then((res) => {
         X_Aggregor_Token = res.data.token;
-        // console.log(X_Aggregor_Token);
         return Promise.resolve();
     });
 };
 
-(setup ? setupUserAccount() : loginUser())
-.then((res) => {
-    return command(['fetch_feeds', X_Aggregor_Token, USER, FEED_NAME]);
+const deleteExistingUser = () => {
+    return loginUser()
+    .then((res) => {
+        return command(['delete_user', X_Aggregor_Token, USER, PASS]);
+    }, (err) => {
+        console.log(err.code);
+        if (err.code === 400) {
+            return Promise.resolve();
+        } else {
+            return Promise.reject();
+        }
+    });
+};
+
+deleteExistingUser()
+.then(() => {
+    return command(['new_user', USER, PASS, EMAIL, FIRST, LAST])
+    .then((res) => {
+        X_Aggregor_Token = res.data.token;
+        return Promise.resolve();
+    });
 })
-.then((res) => {
-    console.log("FEEDS:", res.data.feedNames);
+.then(() => {
+    return loginUser();  
+})
+.then(() => {
+    return command(['create_feed', X_Aggregor_Token, USER, FEED_NAME]);
+})
+.then(() => {
+    return command(['fetch_feeds', X_Aggregor_Token, USER, FEED_NAME])
+    .then((res) => {
+        console.log("FEEDS:", res.data.feedNames);
+        return Promise.resolve();
+    });
+})
+.then(() => {
     return command(['add_plugin', X_Aggregor_Token, USER, FEED_NAME, PLUGIN_URL]);
 })
-.then((res) => {
-    return command(['fetch_plugins', X_Aggregor_Token, USER, FEED_NAME]);
+.then(() => {
+    return command(['fetch_plugins', X_Aggregor_Token, USER, FEED_NAME])
+    .then((res) => {
+        plugins = res.data.plugins;
+        console.log("plugins=", plugins);
+        return Promise.resolve();
+    });
 })
-.then((res) => {
-    plugins = res.data.plugins;
-    console.log("plugins=", plugins);
-
-    return command(['fetch_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
+.then(() => {
+    return command(['fetch_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id])
+    .then((res) => {
+        console.log("entries=", res.data);
+        return Promise.resolve();
+    });
 })
-.then((res) => {
-    console.log("entries=", res.data);
-
-    // const newData = JSON.stringify({ type: "raw", data: { url: PLUGIN_URL, newData: "true" } });
-    // console.log("NEWDATA: " + newData);
+.then(() => {
     return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, "https://www.reddit.com"]);
 })
-.then((res) => {
+.then(() => {
     return command(['delete_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
 })
-.then((res) => {
-    console.log("entries=", res.data);
+.then(() => {
     return command(['delete_feed', X_Aggregor_Token, USER, FEED_NAME]);
 })
-.then((res) => {
-    return command(['logout_user', X_Aggregor_Token]);
+.then(() => {
+    return command(['delete_user', X_Aggregor_Token, USER, PASS]);
 })
-.then((res) => {
-    return command(['delete_user', USER, PASS]);
-})
-.then((res) => {
+.then(() => {
     console.log("Successfully used all routes");
 })
 .catch((err) => {
