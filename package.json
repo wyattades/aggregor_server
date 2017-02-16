@@ -8,13 +8,14 @@
   "scripts": {
     "test": "",
     "dev": "export NODE_ENV=development; cd src; node --trace-warnings server.js",
-    "start": "cd src; node server.js" 
+    "start": "cd src; node server.js"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/GatorCoding/aggregor_server"
   },
   "dependencies": {
+    "cheerio": "^0.22.0",
     "feedparser": "^1.1.5",
     "jsonwebtoken": "^7.1.9",
     "pg": "6.1.0",

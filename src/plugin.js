@@ -1,4 +1,5 @@
-const fs = require('fs');
+const fs = require('fs'),
+      responses = require('./responses');
 
 function Plugin(r, p) {
   this.request = r;
@@ -21,5 +22,27 @@ exports.init = function() {
 };
 
 exports.validPluginType = function(type) {
-  return !!plugins[type];
+  return plugins.hasOwnProperty(type);
+};
+
+//TEMP: 
+exports.getEntries = (type, data) => {
+  return new Promise((resolve, reject) => {
+    if (plugins.hasOwnProperty(type)) {
+      const plg = plugins[type];
+
+      plg.request(data).then((response) => {
+        plg.parse(response).then((entries) => {
+          resolve(entries);
+        }, (err) => {
+          reject(responses.internalError("Failed to parse plugin: " + (data.url || type) + ", error: " + err));
+        });
+      }, (err) => {
+        reject(responses.internalError("Failed to connect to plugin: " + (data.url || type)));
+      });
+
+    } else {
+      reject(responses.badRequest('Given plugin type is not supported'));
+    }
+  });
 };

@@ -6,7 +6,7 @@ const USER = 'username123',
       LAST = 'lastname',
       EMAIL = 'email@email.com',
       FEED_NAME = 'MyFeed',
-      PLUGIN_URL = 'https://www.reddit.com/r/all';
+      PLUGIN_URL = 'https://news.ycombinator.com/';
 
 let X_Aggregor_Token,
     plugins;
@@ -55,7 +55,6 @@ const deleteExistingUser = () => {
     .then((res) => {
         return command(['delete_user', X_Aggregor_Token, USER, PASS]);
     }, (err) => {
-        console.log(err.code);
         if (err.code === 400) {
             return Promise.resolve();
         } else {

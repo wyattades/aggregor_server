@@ -34,6 +34,16 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
   **Response:**  
    - token (string)
 
+- `DELETE`  
+ **Description:** delete a user  
+ **Authentication:** token  
+ **Request:**
+
+  - username (string {32}; **required**)
+  - password (string {8-120}; **required**)  
+  
+  **Response:**  
+
 **Endpoint:** `/user/login`  
 **Methods:**  
 - `POST`  

@@ -1,3 +1,6 @@
+// https://github.com/reddit/reddit/wiki/OAuth2
+// https://github.com/reddit/reddit/wiki/API
+
 const https = require('https'),
       FeedParser = require('feedparser'),
       stream = require('stream');

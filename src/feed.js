@@ -19,16 +19,17 @@ pool
 
 */
 
-// const asyncParse = (string) => {
-//   return new Promise((resolve, reject) => {
-//     let data;
-//     try {
-//       resolve(JSON.parse(string));
-//     } catch(e) {
-//       reject();
-//     }
-//   });
-// };
+const respond = (response, data) => {
+  const responseData = {
+    code: 200,
+    msg: "OK",
+    data: data
+  };
+
+  response.writeHead(200);
+  response.write(JSON.stringify(responseData));
+  response.end();
+};
 
 const getFeedId = (client, userId, feedName) => {
   return new Promise((resolve, reject) => {
@@ -43,17 +44,6 @@ const getFeedId = (client, userId, feedName) => {
         resolve(res.rows[0].id);
       }
     });
-  });
-};
-
-const getEntries = () => {
-  return new Promise((resolve, reject) => {
-    resolve([{
-      title: "example1"
-    }, {
-      title: "example2"
-    }]);
-    //reject(responses.internalError("Failed to parse selected plugin"));
   });
 };
 
@@ -132,18 +122,7 @@ exports.fetchFeeds = function (userId, response) {
           if (err) {
             reject(responses.internalError("Failed to load feed names"));
           } else {
-            const responseData = {
-              code: 200,
-              msg: "OK",
-              data: {
-                feedNames: res.rows.map((p) => p.name)
-              }
-            };
-            // TODO: should feedName contain all that whitespace?
-
-            response.writeHead(200);
-            response.write(JSON.stringify(responseData));
-            response.end();
+            respond(response, { feedNames: res.rows.map((p) => p.name) });
             resolve({
               handled: true
             });
@@ -167,22 +146,13 @@ exports.fetchPlugins = function (userId, feedName, response) {
             if (err) {
               reject(responses.internalError("Failed to load feed"));
             } else {
-
-              const responseData = {
-                code: 200,
-                msg: "OK",
-                data: {
-                  plugins: res.rows.map((p) => ({
-                    id: p.id,
-                    type: p.type,
-                    data: p.data
-                  }))
-                }
-              };
-
-              response.writeHead(200);
-              response.write(JSON.stringify(responseData));
-              response.end();
+              respond(response, {
+                plugins: res.rows.map((p) => ({
+                  id: p.id,
+                  type: p.type,
+                  data: p.data
+                }))
+              });
               resolve({
                 handled: true
               });
@@ -260,18 +230,10 @@ exports.fetchPlugin = function (userId, feedName, pluginId, response) {
                 data
               } = res.rows[0];
 
-              getEntries(type, data).then((entries) => {
-                const responseData = {
-                  code: 200,
-                  msg: "OK",
-                  data: {
-                    entries: entries
-                  }
-                };
-
-                response.writeHead(200);
-                response.write(JSON.stringify(responseData));
-                response.end();
+              plugin.getEntries(type, data).then((entries) => {
+                respond(response, {
+                  entries: entries
+                });
                 resolve({
                   handled: true
                 });
@@ -364,17 +326,9 @@ exports.removePlugin = function (userId, feedName, pluginId) {
 
 exports.availablePlugins = function (response) {
   return new Promise((resolve, reject) => {
-    const responseData = {
-      code: 200,
-      msg: "OK",
-      data: {
-        plugins: plugin.availablePlugins
-      }
-    };
-    //TODO: test out putting response data in resolve with this function
-    response.writeHead(200);
-    response.write(JSON.stringify(responseData));
-    response.end();
+    respond(response, {
+      plugins: plugin.availablePlugins
+    });
     resolve({
       handled: true
     });

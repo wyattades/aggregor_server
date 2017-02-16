@@ -10,3 +10,14 @@ exports.aggregateStream = function(stream) {
     });
   });
 };
+
+exports.parse = (string) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const data = JSON.parse(string);
+      resolve(data);
+    } catch(e) {
+      reject();
+    }
+  });
+};
