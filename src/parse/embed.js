@@ -4,6 +4,8 @@ const request = require('request'),
 /*
     Checkout Noembed [https://noembed.com/], a free and opensource embeding service.
     Unless we want to write an embeding service ourselves!
+
+    this might be moved to the client
 */
 
 const EMBED_SERVICE = 'http://noembed.com/embed?url='; // NOTE: Use https if our website is also https

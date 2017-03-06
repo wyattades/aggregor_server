@@ -112,10 +112,10 @@ const ROUTES = {
     methods: ['POST'],
     content_types: ['application/json'],
     authenticate: true,
-    handle: (req, match, authInfo) => {
+    handle: (req, match, authInfo, res) => {
       return new Promise( (resolve, reject) => {
         utils.aggregateStream(req).then( (data) => {
-          feed.addPlugin(authInfo.user.id, match[2], data.toString()).then(resolve, reject);
+          feed.addPlugin(authInfo.user.id, match[2], data.toString(), res).then(resolve, reject);
         });
       });
     }

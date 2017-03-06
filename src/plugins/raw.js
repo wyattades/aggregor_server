@@ -31,7 +31,8 @@ exports.request = function (data) {
       } else {
         resolve({
           urlData,
-          body
+          body,
+          plugin: data
         });
       }
     });
@@ -68,7 +69,9 @@ exports.parse = function (data) {
                 }
               });
 
-              entryData.id = index;
+              entryData.feedPriority = data.plugin.priority || 0;
+              entryData.feedId = data.plugin.id;
+              entryData.id = entryData.feedId + ':' + index;
               entryData.feed = parser.label + path;
               entryData.feedURL = baseUrl;
               entryData.canDownvote = parser.canDownvote;

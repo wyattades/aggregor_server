@@ -122,7 +122,7 @@ exports.fetchFeeds = function (userId, response) {
           if (err) {
             reject(responses.internalError("Failed to load feed names"));
           } else {
-            respond(response, { feedNames: res.rows.map((p) => p.name) });
+            respond(response, { feedNames: res.rows.map((p) => p.name.trim()) });
             resolve({
               handled: true
             });
@@ -168,7 +168,7 @@ exports.fetchPlugins = function (userId, feedName, response) {
 };
 
 // TODO: decide how to handle multiple plugins of the same type
-exports.addPlugin = function (userId, feedName, data) {
+exports.addPlugin = function (userId, feedName, data, response) {
   return new Promise((resolve, reject) => {
     try {
       data = JSON.parse(data);
@@ -189,14 +189,15 @@ exports.addPlugin = function (userId, feedName, data) {
             info = data.data;
 
           // NOTE: handling multiple plugins of same type/url/plugin??? 'ON CONFLICT (feed_id, ?url?) DO NOTHING'
-          client.query('INSERT INTO plugins VALUES (DEFAULT, $1, $2, $3)', [feedId, type, info], (err) => {
+          client.query('INSERT INTO plugins VALUES (DEFAULT, $1, $2, $3) RETURNING id', [feedId, type, info], (err, res) => {
             done();
 
-            if (err) {
+            if (err || res.rowCount !== 1) {
               reject(responses.internalError("Failed to add plugin"));
             } else {
+              respond(response, { id: res.rows[0].id });
               resolve({
-                data: {}
+                handled: true
               });
             }
           });

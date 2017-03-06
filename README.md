@@ -111,18 +111,24 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
 **Methods:**
 
 - `POST`  
- **Description** update plugin settings, returns parsed plugin  
+ **Description** add new plugin
  **Authentication:** token  
  **Request:**    
  **Response:**  
-  - plugins (array)  
+  - id (string) 
+
+- `PUT`  
+ **Description** update plugin settings
+ **Authentication:** token  
+ **Request:**    
+ **Response:**  
 
 - `GET`  
  **Description:** fetch parsed plugin  
  **Authentication:** token  
  **Request:**    
  **Response:**  
-  - plugins (array)
+  - entries (array)
  
 - `DELETE`  
  **Description:** remove a plugin from the specified feed  

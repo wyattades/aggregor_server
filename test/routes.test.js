@@ -85,7 +85,11 @@ deleteExistingUser()
     });
 })
 .then(() => {
-    return command(['add_plugin', X_Aggregor_Token, USER, FEED_NAME, PLUGIN_URL]);
+    return command(['add_plugin', X_Aggregor_Token, USER, FEED_NAME, PLUGIN_URL])
+    .then((res) => {
+        console.log('id=' + res.data.id);
+        return Promise.resolve();
+    });
 })
 .then(() => {
     return command(['fetch_plugins', X_Aggregor_Token, USER, FEED_NAME])
