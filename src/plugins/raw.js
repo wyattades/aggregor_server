@@ -51,6 +51,8 @@ exports.parse = function (data) {
       const parser = parsers[hostname];
       let $ = cheerio.load(data.body);
 
+      let sumRatings = 0;
+
       parser
       .crawl($)
       .then((entries) => {
@@ -61,6 +63,24 @@ exports.parse = function (data) {
             .parseEntry($, entry)
             .then(determineMedia)
             .then((entryData) => {
+
+              // Assert that data has a valid rating and commentAmount
+              if (typeof entryData.rating !== "number" || isNaN(entryData.rating)) {
+                entryData.rating = 0;
+              }
+              if (typeof entryData.commentAmount !== "number" || isNaN(entryData.commentAmount)) {
+                entryData.commentAmount = 0;
+              }
+
+              // Assert that thumbnail is a valid image
+              if (entryData.thumbnailURL === undefined && entryData.mediaType === "image") {
+                entryData.thumbnailURL = entryData.imageURL;
+              } else if (entryData.thumbnailURL !== undefined && 
+                  entryData.thumbnailURL.match(/\.(jpeg|jpg|gif|png)$/) === null) {
+                entryData.thumbnailURL = undefined;
+              }
+
+              sumRatings += entryData.rating;
 
               // If a link  is a relative path, prefix it with the domain
               ['authorURL', 'link', 'commentURL', 'categoryURL'].forEach(function (link) {
@@ -74,40 +94,25 @@ exports.parse = function (data) {
               entryData.id = entryData.feedId + ':' + index;
               entryData.feed = parser.label + path;
               entryData.feedURL = baseUrl;
-              entryData.canDownvote = parser.canDownvote;
+              entryData.votable = parser.votable;
               return Promise.resolve(entryData);
-            })
-            .then(validateData);
+            });
           })
         );
+      })
+      .then((entries) => {
+        const inverseAvg = entries.length / sumRatings;
+
+        for (let entryData of entries) {
+          entryData.priority = entryData.rating * inverseAvg;
+        }
+        resolve(entries);
       })
       .then(resolve, reject);
 
     } else {
       reject('Given feed does not have a supported parser');
     }
-  });
-};
-
-// TODO: Rename this to something that makes sense
-const validateData = (data) => {
-  return new Promise((resolve) => {
-    // Assert that data has a valid rating and commentAmount
-    if (typeof data.rating !== "number" || isNaN(data.rating)) {
-      data.rating = 0;
-    }
-    if (typeof data.commentAmount !== "number" || isNaN(data.commentAmount)) {
-      data.commentAmount = 0;
-    }
-
-    // Assert that thumbnail is a valid image
-    if (data.thumbnailURL === undefined && data.mediaType === "image") {
-      data.thumbnailURL = data.imageURL;
-    } else if (data.thumbnailURL !== undefined && data.thumbnailURL.match(/\.(jpeg|jpg|gif|png)$/) === null) {
-      data.thumbnailURL = undefined;
-    }
-
-    resolve(data);
   });
 };
 

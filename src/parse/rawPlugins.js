@@ -83,8 +83,17 @@ module.exports = {
                     thumbnailURL: $(el).find(".thumbnail").children().attr("src"),
                     imageURL: $(el).attr("data-url"),
                     date: parseInt($(el).attr("data-timestamp")),
-                    rating: parseInt($(el).find(".score").eq(2).text())
+                    rating: $(el).find(".score").eq(2).text()
                 };
+
+                const split = data.rating.split('k');
+                if (split.length === 1) {
+                    data.rating = parseInt(split[0], 10);
+                } else if (split.length === 2) {
+                    data.rating = parseInt(split[0], 10) * 1000;
+                } else {
+                    data.rating = NaN;
+                }
 
                 resolve(data);
             });

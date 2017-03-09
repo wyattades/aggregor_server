@@ -170,7 +170,6 @@ const ROUTES = {
 
 function regexRoute(rt) {
   const MACROS = {
-    //user_id: '([a-z0-9]{8})',
     user_name: '([a-zA-Z0-9]{4,32})',
     feed_name: '([a-zA-Z0-9]{1,32})',
     plugin_id: '([a-z0-9-]{36})'
@@ -252,7 +251,7 @@ function run(port) {
 
     if(route.authenticate) {
       const token = req.headers['x-aggregor-token'];
-      if(token) {
+      if (token) {
         user.getAuthedUser(token).then((user) => {
           authInfo.user = user;
           authInfo.token = token;
@@ -261,7 +260,7 @@ function run(port) {
           respond(err.code, err.msg, err.data);
         });
       } else {
-        respond(401, 'Unauthorized', '');
+        respond(401, 'Unauthorized');
       }
     } else {
       handle();
@@ -276,7 +275,13 @@ function run(port) {
           }
         },
         (err) => {
-          respond(err.code || 500, err.msg, err.data);
+          console.log("ERROR: ", err);
+          if (!err.code) err = {
+            code: 500,
+            msg: 'Internal Error',
+            data: JSON.stringify(err)
+          };
+          respond(err.code, err.msg, err.data);
         }
       );
     }

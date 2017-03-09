@@ -35,14 +35,14 @@ exports.getEntries = (type, data) => {
         plg.parse(response).then((entries) => {
           resolve(entries);
         }, (err) => {
-          reject(responses.internalError("Failed to parse plugin: " + (data.url || type) + ", error: " + err));
+          reject(responses.conflict("Failed to parse plugin: " + (data.url || type) + ", error: " + err));
         });
       }, (err) => {
-        reject(responses.internalError("Failed to connect to plugin: " + (data.url || type)));
+        reject(responses.notFound("Failed to connect to plugin: " + (data.url || type)));
       });
 
     } else {
-      reject(responses.badRequest('Given plugin type is not supported'));
+      reject(responses.conflict('Given plugin type is not supported'));
     }
   });
 };

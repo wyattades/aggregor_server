@@ -6,7 +6,7 @@
     "node": ">=6.6.0"
   },
   "scripts": {
-    "test": "",
+    "test": "node test/routes.test.js",
     "dev": "export NODE_ENV=development; cd src; node --trace-warnings server.js",
     "start": "cd src; node server.js"
   },

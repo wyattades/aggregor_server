@@ -22,6 +22,14 @@ exports.unauthorized = (data) => {
   };
 };
 
+exports.conflict = (data) => {
+  return {
+    code: 409,
+    msg: 'Conflict',
+    data
+  };
+};
+
 exports.internalError = (data) => {
   return {
     code: 500,

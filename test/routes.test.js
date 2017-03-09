@@ -55,7 +55,7 @@ const deleteExistingUser = () => {
     .then((res) => {
         return command(['delete_user', X_Aggregor_Token, USER, PASS]);
     }, (err) => {
-        if (err.code === 400) {
+        if (err.code === 401) {
             return Promise.resolve();
         } else {
             return Promise.reject();

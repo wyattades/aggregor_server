@@ -1,5 +1,8 @@
 const crypto = require('crypto');
 
+// TODO: dont use usernames, make email and password the priority
+// TODO: allow logging in with Facebook or Google
+
 const {
   generateSalt,
   generatePasswordHash,
@@ -63,16 +66,14 @@ function getUserByUsername(username) {
       } else {
         client.query('SELECT * FROM users WHERE username = $1::text', [username], (err, res) => {
           done();
-
           if(err) {
             reject(responses.internalError(err));
+          } else if (res.rowCount === 0) {
+            reject(responses.unauthorized("User not found with username: " + username));
+          } else if (res.rowCount > 1) {
+            reject(responses.internalError("Multiple users with the same username"));
           } else {
-            const user = res.rows.length ? res.rows[0] : undefined;
-            if(!user) {
-              reject(responses.badRequest("User not found with username: " + username));
-            } else {
-              resolve(user);
-            }
+            resolve(res.rows[0]);
           }
         });
       }
@@ -95,7 +96,7 @@ exports.getAuthedUser = function(token) {
             } else if (res.rowCount === 0) {
               reject(responses.internalError("User not found for matched token"));
             } else if (res.rowCount > 1) {
-              reject(responses.internalError("Multiple users with the same id!"));
+              reject(responses.internalError("Multiple users with the same id"));
             } else {
               const user = res.rows[0];
               resolve(user);
@@ -121,10 +122,9 @@ exports.newUser = function(data) {
 
     if(userInfo) {
       const requiredInfo = {
-        'last_name': [10, 32],
-        'first_name': [10, 32],
-        'username': [1, 32],
-        'password': [8, 120],
+        'email': /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+        'username': /^(?![_-])(?!.*[_-]{2})[a-zA-Z0-9_-]{3,31}[a-zA-Z0-9]$/,
+        'password': /(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d$@$!%*#?&]{8,64}$/,
       },
         keys = Reflect.ownKeys(userInfo),
         requiredKeys = Reflect.ownKeys(requiredInfo);
@@ -140,9 +140,11 @@ exports.newUser = function(data) {
         return reject(responses.badRequest(`Missing required value${missing.length > 1 ? 's' : ''}: ${missing.join(", ")}`));
       }
 
-      // TODO: finish checking lengths of data
-      keys.forEach((k) => {
-      });
+      for (const k of requiredKeys) {
+        if (!requiredInfo[k].test(userInfo[k])) {
+          return reject(responses.badRequest(`${k} does not match criteria`));
+        }
+      }
 
       generateSalt().then( (salt) => {
         Promise.all([generateId(), generatePasswordHash(userInfo.password, salt)]).then( (vals) => {
@@ -152,20 +154,24 @@ exports.newUser = function(data) {
             if (err) {
               responses.internalError("Failed to connect to database");
             } else {
-              client.query('INSERT INTO users VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', [
+              client.query('INSERT INTO users VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (username) DO NOTHING', [
                   id,
                   userInfo.username,
-                  userInfo.email || '',
-                  userInfo.first_name,
-                  userInfo.last_name,
+                  userInfo.email,
+                  userInfo.first_name || '',
+                  userInfo.last_name || '',
                   salt,
                   hash,
                   (new Date(Date.now())).toISOString()
                 ],
                 (err, res) => {
                   done();
-                  if(err) {
+                  if (err) {
                     reject(responses.internalError(err));
+                  } else if (res.rowCount === 0) {
+                    reject(responses.conflictError('This username is already taken'));
+                  } else if (res.rowCount > 1) {
+                    reject(responses.internalError('Duplicate matching usernames'));
                   } else {
                     newAuthToken(id).then(
                       (token) => resolve({data: {token}}),

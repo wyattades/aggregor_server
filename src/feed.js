@@ -57,7 +57,7 @@ exports.createFeed = function (userId, data) {
 
     if (data.name) {
       if (data.name.length > 32) {
-        return reject(responses.badRequest('Feed name has max length of 32 characters'));
+        return reject(responses.badRequest('Feed name does not match criteria'));
       }
     } else {
       return reject(responses.badRequest('Must provide name for feed'));
@@ -72,7 +72,7 @@ exports.createFeed = function (userId, data) {
           if (err) {
             reject(responses.internalError('Failed to create feed'));
           } else if (res.rowCount === 0) {
-            reject(responses.badRequest("Feed '" + data.name + "' already exists"));
+            reject(responses.conflict('This feed name is already being used'));
           } else if (res.rowCount > 1) {
             reject(responses.internalError("Duplicate matching feeds"));
           } else {
@@ -167,7 +167,6 @@ exports.fetchPlugins = function (userId, feedName, response) {
   });
 };
 
-// TODO: decide how to handle multiple plugins of the same type
 exports.addPlugin = function (userId, feedName, data, response) {
   return new Promise((resolve, reject) => {
     try {
