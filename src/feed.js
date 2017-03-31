@@ -56,7 +56,7 @@ exports.createFeed = function (userId, data) {
     }
 
     if (data.name) {
-      if (data.name.length > 32) {
+      if (! /^[a-zA-Z0-9]{1,32}$/.test(data.name)) {
         return reject(responses.badRequest('Feed name does not match criteria'));
       }
     } else {
