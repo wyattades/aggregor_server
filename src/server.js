@@ -209,7 +209,7 @@ function init() {
     password: password,
     database: dbInfo.pathname.substring(1),
     host: dbInfo.hostname,
-    port: process.env.PORT || dbInfo.port || 5432,
+    port: dbInfo.port ? Number(dbInfo.port) : 5432,
     max: config.PG_POOL_SIZE,
     idleTimeoutMillis: config.DB_TIMEOUT
   });
@@ -297,4 +297,4 @@ function run(port) {
 // }
 
 init();
-run(config.HOST_PORT);
+run(process.env.PORT || config.HOST_PORT);
