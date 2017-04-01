@@ -9,7 +9,7 @@ const config = require('../config'),
       utils = require('./utils');
 
 if (process.env.NODE_ENV !== 'development') {
-  config.dbInfo.DB_URI = process.env.DATABASE_URL;
+  config.DB_URI = process.env.DATABASE_URL;
 }
 
 const ROUTES = {
