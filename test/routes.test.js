@@ -1,12 +1,13 @@
 const exec = require('child_process').exec;
 
-const USER = 'username123',
+const USER = 'g2_324f_38vK_D',
       PASS = 'password123',
       FIRST = 'firstname',
       LAST = 'lastname',
       EMAIL = 'email@email.com',
       FEED_NAME = 'MyFeed',
-      PLUGIN_URL = 'https://news.ycombinator.com/';
+      PLUGIN_URL = 'https://news.ycombinator.com/',
+      UPDATED_PLUGIN_URL = 'https://www.reddit.com';
 
 let X_Aggregor_Token,
     plugins;
@@ -107,7 +108,7 @@ deleteExistingUser()
     });
 })
 .then(() => {
-    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, "https://www.reddit.com"]);
+    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, UPDATED_PLUGIN_URL]);
 })
 .then(() => {
     return command(['delete_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
