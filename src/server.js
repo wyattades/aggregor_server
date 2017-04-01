@@ -288,13 +288,5 @@ function run(port) {
   }).listen(port);
 }
 
-// if (process.env.NODE_ENV === 'development') {
-  // process.on('uncaughtException', function (err) {
-  //   console.error((new Date).toUTCString() + ' uncaughtException:', err.message);
-  //   console.error(err.stack);
-  //   process.exit(1);
-  // });
-// }
-
 init();
 run(process.env.PORT || config.HOST_PORT);
