@@ -8,6 +8,10 @@ const config = require('../config'),
       feed = require('./feed'),
       utils = require('./utils');
 
+if (process.env.NODE_ENV !== 'development') {
+  config.dbInfo.DB_URI = process.env.DATABASE_URL;
+}
+
 const ROUTES = {
   user_new: {
     endpoint: regexRoute('/user'),
