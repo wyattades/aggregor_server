@@ -8,10 +8,6 @@ const config = require('../config'),
       feed = require('./feed'),
       utils = require('./utils');
 
-if (process.env.NODE_ENV !== 'development') {
-  config.DB_URI = process.env.DATABASE_URL;
-}
-
 const ROUTES = {
   user_new: {
     endpoint: regexRoute('/user'),
@@ -205,7 +201,7 @@ function matchUrl(req) {
 }
 
 function init() {
-  const dbInfo = url.parse(config.DB_URI),
+  const dbInfo = url.parse(process.env.DATABASE_URL || config.DB_URI),
         [username, password] = dbInfo.auth.split(':');
 
   pg.init({
@@ -213,7 +209,7 @@ function init() {
     password: password,
     database: dbInfo.pathname.substring(1),
     host: dbInfo.hostname,
-    port: dbInfo.port ? Number(dbInfo.port) : 5432,
+    port: process.env.PORT || dbInfo.port || 5432,
     max: config.PG_POOL_SIZE,
     idleTimeoutMillis: config.DB_TIMEOUT
   });
