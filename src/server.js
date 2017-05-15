@@ -184,8 +184,12 @@ function regexRoute(rt) {
 function matchUrl(req) {
   const reqUrl = url.parse(req.url, true),
           path = reqUrl.pathname,
-          method = req.method,
-          content_type = req.headers['content-type'];
+          method = req.method;
+  let content_type = req.headers['content-type'];
+  
+  // handle discrepencies in content_type
+  const split = content_type.split(";");
+  if (split.length > 1) content_type = split[0];
 
   const route =
     Reflect.ownKeys(ROUTES)
@@ -224,6 +228,7 @@ function run(port) {
   http.createServer( (req, res) => {
 
     function respond(code, msg='', data='', headers={}) {
+      console.log({ code, msg, data });
       headers['Content-Type'] = 'application/json';
       res.writeHead(code, headers);
       res.end(JSON.stringify({code, msg, data}));
@@ -275,7 +280,6 @@ function run(port) {
           }
         },
         (err) => {
-          console.log("ERROR: ", err);
           if (!err.code) err = {
             code: 500,
             msg: 'Internal Error',

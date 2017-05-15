@@ -8,7 +8,8 @@
   "scripts": {
     "test": "node test/routes.test.js",
     "dev": "export NODE_ENV=development; cd src; node --trace-warnings server.js",
-    "start": "cd src; node server.js"
+    "start": "cd src; node server.js",
+    "deploy": "git push heroku master"
   },
   "repository": {
     "type": "git",

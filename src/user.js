@@ -98,8 +98,7 @@ exports.getAuthedUser = function(token) {
             } else if (res.rowCount > 1) {
               reject(responses.internalError("Multiple users with the same id"));
             } else {
-              const user = res.rows[0];
-              resolve(user);
+              resolve(res.rows[0]);
             }
           });  
         }, (err) => {
@@ -169,7 +168,7 @@ exports.newUser = function(data) {
                   if (err) {
                     reject(responses.internalError(err));
                   } else if (res.rowCount === 0) {
-                    reject(responses.conflictError('This username is already taken'));
+                    reject(responses.conflict('This username is already taken'));
                   } else if (res.rowCount > 1) {
                     reject(responses.internalError('Duplicate matching usernames'));
                   } else {
@@ -240,7 +239,7 @@ exports.logoutUser = function(authInfo) {
   });
 };
 
-//NOTE: require username and password or just auth token?
+//NOTE: require username and password?
 exports.deleteUser = function(authInfo, data) {
   return new Promise((resolve, reject) => {
 
@@ -250,7 +249,7 @@ exports.deleteUser = function(authInfo, data) {
       return reject(responses.badRequest("Bad request data in deleting user"));
     }
 
-    if (data && data.username && data.password) {
+    if (data && data.username) {
       const username = data.username;
       getUserByUsername(username).then((user) => {
         const passwordHash = user.password_hash,

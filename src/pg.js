@@ -19,3 +19,16 @@ exports.init = function(config) {
 exports.pool = function() {
   return PG_POOL;
 };
+
+// exports.pool2 = () => {
+//   return new Promise((resolve, reject) => {
+//     PG_POOL.connect((err, client, release) => {
+//       if (err) {
+//         reject(responses.internalError('Failed to connect to database'));
+//       } else {
+//         resolve(client);
+//       }
+//       release();
+//     });
+//   });
+// };

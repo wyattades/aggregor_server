@@ -116,7 +116,7 @@ exports.parse = function (data) {
   });
 };
 
-// TODO: use Noembed (in embed.js)
+// TODO: use Noembed (in embed.js (or put in client??))
 const determineMedia = (data) => {
   return new Promise((resolve) => {
 
