@@ -230,7 +230,7 @@ exports.fetchPlugin = function (userId, feedName, pluginId, response) {
                 data
               } = res.rows[0];
 
-              plugin.getEntries(type, data).then((entries) => {
+              plugin.getEntries(type, data, pluginId).then((entries) => {
                 respond(response, {
                   entries: entries
                 });

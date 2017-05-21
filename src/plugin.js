@@ -26,13 +26,13 @@ exports.validPluginType = function(type) {
 };
 
 //TEMP: 
-exports.getEntries = (type, data) => {
+exports.getEntries = (type, data, id) => {
   return new Promise((resolve, reject) => {
     if (plugins.hasOwnProperty(type)) {
       const plg = plugins[type];
 
       plg.request(data).then((response) => {
-        plg.parse(response).then((entries) => {
+        plg.parse(response, id).then((entries) => {
           resolve(entries);
         }, (err) => {
           reject(responses.conflict("Failed to parse plugin: " + (data.url || type) + ", error: " + err));

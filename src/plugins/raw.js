@@ -40,7 +40,7 @@ exports.request = function (data) {
   });
 };
 
-exports.parse = function (data) {
+exports.parse = function (data, pluginId) {
   return new Promise((resolve, reject) => {
     const baseUrl = 'http://' + data.urlData.hostname + '/',
       path = data.urlData.pathname,
@@ -90,8 +90,8 @@ exports.parse = function (data) {
               });
 
               entryData.feedPriority = data.plugin.priority || 0;
-              entryData.feedId = data.plugin.id;
-              entryData.id = entryData.feedId + ':' + index;
+              entryData.pluginId = pluginId;
+              entryData.id = entryData.pluginId + ':' + index;
               entryData.feed = parser.label + path;
               entryData.feedURL = baseUrl;
               entryData.votable = parser.votable;
