@@ -95,6 +95,10 @@ module.exports = {
                     data.rating = NaN;
                 }
 
+                if (data.thumbnailURL) {
+                    data.thumbnailURL = data.thumbnailURL.replace(/^(\/\/)/, 'http://');
+                }
+
                 resolve(data);
             });
         }

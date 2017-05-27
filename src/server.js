@@ -188,8 +188,10 @@ function matchUrl(req) {
   let content_type = req.headers['content-type'];
   
   // handle discrepencies in content_type
-  const split = content_type.split(";");
-  if (split.length > 1) content_type = split[0];
+  if (content_type) {
+    const split = content_type.split(";");
+    if (split.length > 1) content_type = split[0];
+  }
 
   const route =
     Reflect.ownKeys(ROUTES)
@@ -265,7 +267,7 @@ function run(port) {
           respond(err.code, err.msg, err.data);
         });
       } else {
-        respond(401, 'Unauthorized');
+        respond(401, 'Unauthorized', 'Auth token is not valid');
       }
     } else {
       handle();

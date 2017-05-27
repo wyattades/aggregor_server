@@ -91,7 +91,7 @@ exports.parse = function (data, pluginId) {
 
               entryData.feedPriority = data.plugin.priority || 0;
               entryData.pluginId = pluginId;
-              entryData.id = entryData.pluginId + ':' + index;
+              entryData.id = index + ':' + pluginId;
               entryData.feed = parser.label + path;
               entryData.feedURL = baseUrl;
               entryData.votable = parser.votable;

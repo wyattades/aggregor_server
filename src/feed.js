@@ -177,6 +177,8 @@ exports.addPlugin = function (userId, feedName, data, response) {
 
     if (!plugin.validPluginType(data.type)) {
       return reject(responses.badRequest("Invalid plugin type '" + data.type + "'"));
+    } else if (typeof data.data !== 'object') {
+      return reject(responses.badRequest("Invalid 'data' object passed in plugin data"));
     }
 
     pg.pool().connect((err, client, done) => {
@@ -231,9 +233,7 @@ exports.fetchPlugin = function (userId, feedName, pluginId, response) {
               } = res.rows[0];
 
               plugin.getEntries(type, data, pluginId).then((entries) => {
-                respond(response, {
-                  entries: entries
-                });
+                respond(response, { entries });
                 resolve({
                   handled: true
                 });
@@ -261,6 +261,8 @@ exports.updatePlugin = function (userId, feedName, pluginId, data) {
 
     if (!plugin.validPluginType(data.type)) {
       return reject(responses.badRequest("Invalid plugin type '" + data.type + "'"));
+    } else if (typeof data.data !== 'object') {
+      return reject(responses.badRequest("Invalid 'data' object passed in plugin data"));
     }
 
     pg.pool().connect((err, client, done) => {

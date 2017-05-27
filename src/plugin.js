@@ -38,7 +38,7 @@ exports.getEntries = (type, data, id) => {
           reject(responses.conflict("Failed to parse plugin: " + (data.url || type) + ", error: " + err));
         });
       }, (err) => {
-        reject(responses.notFound("Failed to connect to plugin: " + (data.url || type)));
+        reject(responses.conflict("Failed to connect to plugin: " + (data.url || type)));
       });
 
     } else {
