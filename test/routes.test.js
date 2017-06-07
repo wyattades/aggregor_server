@@ -6,11 +6,11 @@ const USER = 'g2_324f_38vK_D',
       LAST = 'lastname',
       EMAIL = 'email@email.com',
       FEED_NAME = 'MyFeed',
-      PLUGIN_URL = 'https://news.ycombinator.com/',
-      UPDATED_PLUGIN_URL = 'https://www.reddit.com';
+      SUBREDDIT = 'all',
+      UPDATED_SUBREDDIT = 'aww';
 
 let X_Aggregor_Token,
-    plugins;
+    plugin_id;
 
 const command = (args) => {
     return new Promise((resolve, reject) => {
@@ -86,32 +86,46 @@ deleteExistingUser()
     });
 })
 .then(() => {
-    return command(['add_plugin', X_Aggregor_Token, USER, FEED_NAME, PLUGIN_URL])
+    return command(['add_plugin', X_Aggregor_Token, USER, FEED_NAME, 'reddit', '0.4', 'all'])
     .then((res) => {
-        console.log('id=' + res.data.id);
         return Promise.resolve();
     });
+})
+.then(() => {
+    return command(['add_plugin', X_Aggregor_Token, USER, FEED_NAME, 'reddit', '0.4', 'aww'])
+    .then((res) => {
+        plugin_id = res.data.id;
+        return Promise.resolve();
+    });
+})
+.then(() => {
+    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugin_id, 'hackernews', '0.8', '']);
 })
 .then(() => {
     return command(['fetch_plugins', X_Aggregor_Token, USER, FEED_NAME])
     .then((res) => {
-        plugins = res.data.plugins;
-        console.log("plugins=", plugins);
+        console.log("plugins=", res.data.plugins);
         return Promise.resolve();
     });
 })
 .then(() => {
-    return command(['fetch_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id])
+    return command(['fetch_feed', X_Aggregor_Token, USER, FEED_NAME, 1])
     .then((res) => {
-        console.log("entries=", res.data);
+        console.log("entries=", res.data.entries);
+        console.log("errors=", res.data.errors);
         return Promise.resolve();
     });
 })
 .then(() => {
-    return command(['update_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id, UPDATED_PLUGIN_URL]);
+    return command(['fetch_feed', X_Aggregor_Token, USER, FEED_NAME, 2])
+    .then((res) => {
+        console.log("entries=", res.data.entries);
+        console.log("errors=", res.data.errors);
+        return Promise.resolve();
+    });
 })
 .then(() => {
-    return command(['delete_plugin', X_Aggregor_Token, USER, FEED_NAME, plugins[0].id]);
+    return command(['delete_plugin', X_Aggregor_Token, USER, FEED_NAME, plugin_id]);
 })
 .then(() => {
     return command(['delete_feed', X_Aggregor_Token, USER, FEED_NAME]);

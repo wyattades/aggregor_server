@@ -6,7 +6,18 @@ const config = require('../config'),
       user = require('./user'),
       auth = require('./auth'),
       feed = require('./feed'),
-      utils = require('./utils');
+      utils = require('./utils'),
+      responses = require('./responses');
+
+const __DEV__ = process.env.NODE_ENV === 'development';
+
+const MACROS = {
+  user_name: '([_a-zA-Z0-9]{4,32})',
+  feed_name: '([_a-zA-Z0-9]{1,32})',
+  plugin_id: '([a-z0-9-]{36})',
+  page: '([0-9]+)',
+};
+
 
 const ROUTES = {
   user_new: {
@@ -121,13 +132,13 @@ const ROUTES = {
     }
   },
 
-  fetch_plugin: {
-    endpoint: regexRoute('/user/:user_name/feed/:feed_name/:plugin_id'),
+  fetch_feed: {
+    endpoint: regexRoute('/user/:user_name/feed/:feed_name/:page'),
     methods: ['GET'],
     authenticate: true,
     handle: (req, match, authInfo, res) => {
       return new Promise( (resolve, reject) => {
-        feed.fetchPlugin(authInfo.user.id, match[2], match[3], res).then(resolve, reject);
+        feed.fetchFeed(authInfo.user.id, match[2], match[3], res).then(resolve, reject);
       });
     }
   },
@@ -169,11 +180,6 @@ const ROUTES = {
 };
 
 function regexRoute(rt) {
-  const MACROS = {
-    user_name: '([a-zA-Z0-9]{4,32})',
-    feed_name: '([a-zA-Z0-9]{1,32})',
-    plugin_id: '([a-z0-9-]{36})'
-  };
 
   let re = `^${rt}/?$`
     .replace(/:(\w+)/g, (m, name) => MACROS[name] ? MACROS[name] : m);
@@ -197,13 +203,15 @@ function matchUrl(req) {
     Reflect.ownKeys(ROUTES)
     .map(_ => ROUTES[_])
     .find(r => path.match(r.endpoint)
-               && r.methods.includes(method)
-               && (!r.content_types || r.content_types.includes(content_type)));
+               && r.methods.includes(method));
 
   if(!route)
-    return [undefined, undefined];
+    return [undefined, undefined, responses.notFound('No route: ' + method + ' ' + path)];
+  else if (route.content_types && !route.content_types.includes(content_type)) {
+    return [undefined, undefined, responses.badRequest('Invalid content type provided')];
+  }
 
-  return [route, path.match(route.endpoint)];
+  return [route, path.match(route.endpoint), undefined];
 }
 
 function init() {
@@ -230,13 +238,21 @@ function run(port) {
   http.createServer( (req, res) => {
 
     function respond(code, msg='', data='', headers={}) {
-      console.log({ code, msg, data });
+
+      if (__DEV__) {
+        let print_data = data;
+        // if (Array.isArray(data)) {
+        //   print_data = `[Array:${data.length}]`;
+        // }
+        console.log({ code, msg, data: print_data });
+      }
+
       headers['Content-Type'] = 'application/json';
       res.writeHead(code, headers);
       res.end(JSON.stringify({code, msg, data}));
     }
 
-    const [route, match] = matchUrl(req);
+    const [route, match, matchError] = matchUrl(req);
     let authInfo = {};
 
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -251,8 +267,8 @@ function run(port) {
       return;
     }
 
-    if(!route) {
-      respond(404, 'Not Found', 'No route: ' + req.method + ' ' + req.url);
+    if(matchError) {
+      respond(matchError.code, matchError.msg, matchError.data);
       return;
     }
 
@@ -267,7 +283,8 @@ function run(port) {
           respond(err.code, err.msg, err.data);
         });
       } else {
-        respond(401, 'Unauthorized', 'Auth token is not valid');
+        const err = responses.unauthorized('Auth token is not valid');
+        respond(err.code, err.msg, err.data);
       }
     } else {
       handle();
@@ -282,11 +299,7 @@ function run(port) {
           }
         },
         (err) => {
-          if (!err.code) err = {
-            code: 500,
-            msg: 'Internal Error',
-            data: JSON.stringify(err)
-          };
+          if (!err.code) err = responses.internalError(JSON.stringify(err));
           respond(err.code, err.msg, err.data);
         }
       );

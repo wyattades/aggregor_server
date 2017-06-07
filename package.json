@@ -7,9 +7,10 @@
   },
   "scripts": {
     "test": "node test/routes.test.js",
-    "dev": "export NODE_ENV=development; cd src; node --trace-warnings server.js",
-    "start": "cd src; node server.js",
-    "deploy": "git push heroku master"
+    "dev": "export NODE_ENV=development && cd src && node --trace-warnings server.js",
+    "start": "cd src && node server.js",
+    "deploy": "git push heroku master",
+    "reset": "export DATABASE_URL=postgres://aggregor@localhost/aggregor && bash scripts/reset_db.sh"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,7 @@
     "jsonwebtoken": "^7.1.9",
     "pg": "6.1.0",
     "request": "^2.79.0",
+    "request-promise-native": "^1.0.4",
     "through2": "^2.0.1"
   },
   "devDependencies": {

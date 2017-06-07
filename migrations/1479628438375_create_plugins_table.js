@@ -3,7 +3,8 @@ exports.up = function(pgm) {
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     feed_id integer REFERENCES feeds ON DELETE CASCADE,
     type varchar(64) NOT NULL,
-    data jsonb
+    priority real DEFAULT 0.5::real,
+    data jsonb NOT NULL
   );
 
   CREATE INDEX plugin_feed_id_idx ON plugins (feed_id);`;
@@ -12,6 +13,8 @@ exports.up = function(pgm) {
 };
 
 exports.down = function(pgm) {
-  let sql = `DROP INDEX plugin_feed_id_idx; DROP TABLE plugins;`;
+  let sql = `DROP INDEX plugin_feed_id_idx; 
+    DROP TABLE plugins;`;
+
   pgm.sql(sql);
 };

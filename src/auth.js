@@ -57,20 +57,24 @@ exports.newAuthToken = function(userId) {
     generateAuthToken().then(
       (tokenInfo) => {
         pg.pool().connect((err, client, done) => {
-          client.query('INSERT INTO auth_tokens VALUES (DEFAULT, $1, $2, $3, $4)', [
-              userId,
-              tokenInfo.token,
-              tokenInfo.secret,
-              (new Date(Date.now())).toISOString()
-            ],
-            (err, res) => {
-              if(err) {
-                reject(responses.internalError(err));
-              } else {
-                resolve(tokenInfo.token);
+          if (err) {
+            reject(responses.internalError('Failed to generate auth token'));
+          } else {
+            client.query('INSERT INTO auth_tokens VALUES (DEFAULT, $1, $2, $3, $4)', [
+                userId,
+                tokenInfo.token,
+                tokenInfo.secret,
+                (new Date(Date.now())).toISOString()
+              ],
+              (err, res) => {
+                if(err) {
+                  reject(responses.internalError(err));
+                } else {
+                  resolve(tokenInfo.token);
+                }
               }
-            }
-          );
+            );
+          }
         });
       },
       (err) => {

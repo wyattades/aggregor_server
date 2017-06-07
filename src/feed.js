@@ -3,6 +3,8 @@ const responses = require('./responses'),
 
 var pg;
 
+const AMOUNT_PER_PAGE = 20;
+
 //TODO: replace pgpool connect with promise
 /*
 e.g.
@@ -140,7 +142,7 @@ exports.fetchPlugins = function (userId, feedName, response) {
         reject(responses.internalError("Failed to fetch plugins"));
       } else {
         getFeedId(client, userId, feedName).then((feedId) => {
-          client.query('SELECT id, type, data FROM plugins WHERE feed_id = $1', [feedId], (err, res) => {
+          client.query('SELECT id, type, data, priority FROM plugins WHERE feed_id = $1', [feedId], (err, res) => {
             done();
 
             if (err) {
@@ -167,6 +169,72 @@ exports.fetchPlugins = function (userId, feedName, response) {
   });
 };
 
+// NOTE: holy callback hell
+exports.fetchFeed = (userId, feedName, page, response) => new Promise((resolve, reject) => { 
+  page = parseInt(page, 10);
+  if (isNaN(page) || typeof page !== 'number' || page <= 0) {
+    reject(responses.badRequest('Invalid page, must be a positive integer'));
+  } else {
+    pg.pool().connect((err, client, done) => {
+      if (err) {
+        reject(responses.internalError("Failed to connect to DB"));
+      } else {
+        getFeedId(client, userId, feedName).then((feedId) => {
+          client.query(`SELECT * FROM plugins WHERE feed_id = $1`, [feedId], (err, res) => {
+            done();
+            if (err) {
+              reject(responses.internalError("Failed to fetch feed"));
+            } else {
+
+              const plugins = res.rows;
+
+              // TODO move this to the database when we add or update plugin
+              let totalPriority = 0;
+              for (let i = 0; i < plugins.length; i++) {
+                totalPriority += plugins[i].priority;
+              }
+              for (let i = 0; i < plugins.length; i++) {
+                const normalPriority = plugins[i].priority / totalPriority;
+                plugins[i].normalPriority = normalPriority;
+                plugins[i].offset = Math.round((page-1)*normalPriority*AMOUNT_PER_PAGE);
+                plugins[i].amount = Math.round(normalPriority*AMOUNT_PER_PAGE);
+              }
+
+              Promise.all(plugins.map(_plugin => 
+                plugin.fetchPlugin(_plugin)
+              ))
+              .then(results => {
+                done();
+
+
+                let entries = [], 
+                    errors = {};
+                for (let i = 0; i < results.length; i++) {
+                  const result = results[i];
+                  if (Array.isArray(result)) {
+                    entries = entries.concat(result);
+                  } else {
+                    errors[result.id] = result.err;
+                  }
+                }
+
+                entries.sort((a, b) => a.priority - b.priority);
+
+                respond(response, { entries, errors });
+                resolve({ handled: true });
+              })
+              .catch(err => reject(responses.internalError(err)));
+            }
+          });
+        }, (err) => {
+          done();
+          reject(err);
+        });
+      }
+    });
+  }
+});
+
 exports.addPlugin = function (userId, feedName, data, response) {
   return new Promise((resolve, reject) => {
     try {
@@ -175,79 +243,36 @@ exports.addPlugin = function (userId, feedName, data, response) {
       return reject(responses.badRequest("Bad request data in adding plugin"));
     }
 
-    if (!plugin.validPluginType(data.type)) {
-      return reject(responses.badRequest("Invalid plugin type '" + data.type + "'"));
-    } else if (typeof data.data !== 'object') {
-      return reject(responses.badRequest("Invalid 'data' object passed in plugin data"));
-    }
+    plugin.validPlugin(data).then(() => {
+      pg.pool().connect((err, client, done) => {
+        if (err) {
+          reject(responses.internalError("Failed to add plugin"));
+        } else {
+          getFeedId(client, userId, feedName).then((feedId) => {
+            const { type, priority } = data,
+              info = data.data;
 
-    pg.pool().connect((err, client, done) => {
-      if (err) {
-        reject(responses.internalError("Failed to add plugin"));
-      } else {
-        getFeedId(client, userId, feedName).then((feedId) => {
-          const type = data.type,
-            info = data.data;
+            client.query('INSERT INTO plugins VALUES (DEFAULT, $1, $2, $3::real, $4) RETURNING id', [feedId, type, priority, info], (err, res) => {
+              done();
 
-          // NOTE: handling multiple plugins of same type/url/plugin??? 'ON CONFLICT (feed_id, ?url?) DO NOTHING'
-          client.query('INSERT INTO plugins VALUES (DEFAULT, $1, $2, $3) RETURNING id', [feedId, type, info], (err, res) => {
-            done();
-
-            if (err || res.rowCount !== 1) {
-              reject(responses.internalError("Failed to add plugin"));
-            } else {
-              respond(response, { id: res.rows[0].id });
-              resolve({
-                handled: true
-              });
-            }
-          });
-        }, (err) => {
-          done();
-          reject(err);
-        });
-      }
-    });
-  });
-};
-
-exports.fetchPlugin = function (userId, feedName, pluginId, response) {
-  return new Promise((resolve, reject) => {
-    pg.pool().connect((err, client, done) => {
-      if (err) {
-        reject(responses.internalError("Failed to fetch plugin"));
-      } else {
-        getFeedId(client, userId, feedName).then((feedId) => {
-          client.query('SELECT type, data FROM plugins WHERE feed_id = $1 AND id = $2', [feedId, pluginId], (err, res) => {
-            done();
-            if (err) {
-              reject(responses.internalError("Failed to fetch plugin"));
-            } else if (res.rowCount === 0) {
-              reject(responses.badRequest("No plugin with id '" + pluginId + "' in feed '" + feedName + "'"));
-            } else if (res.rowCount > 1) {
-              reject(responses.internalError("Multiple plugins with the same id"));
-            } else {
-              const {
-                type,
-                data
-              } = res.rows[0];
-
-              plugin.getEntries(type, data, pluginId).then((entries) => {
-                respond(response, { entries });
+              if (err) {
+                reject(responses.internalError("Failed to add plugin: " + err));
+              } else if (res.rows.length !== 1) {
+                reject(responses.internalError('Failed to add plugin: duplicate or null plugin'));
+              } else {
+                respond(response, { id: res.rows[0].id });
                 resolve({
                   handled: true
                 });
-              }, (err) => {
-                reject(err);
-              });
-            }
+              }
+            });
+          }, (err) => {
+            done();
+            reject(err);
           });
-        }, (err) => {
-          done();
-          reject(err);
-        });
-      }
-    });
+        }
+      });
+    }, err => reject(responses.badRequest("Invalid plugin request: " + err)));
   });
 };
 
@@ -259,40 +284,36 @@ exports.updatePlugin = function (userId, feedName, pluginId, data) {
       return reject(responses.badRequest("Bad request data in updating plugin"));
     }
 
-    if (!plugin.validPluginType(data.type)) {
-      return reject(responses.badRequest("Invalid plugin type '" + data.type + "'"));
-    } else if (typeof data.data !== 'object') {
-      return reject(responses.badRequest("Invalid 'data' object passed in plugin data"));
-    }
+    plugin.validPlugin(data).then(() => {
+      pg.pool().connect((err, client, done) => {
+        if (err) {
+          reject(responses.internalError("Failed to connect to database"));
+        } else {
+          getFeedId(client, userId, feedName).then((feedId) => {
+            const { type, priority } = data,
+              info = data.data;
 
-    pg.pool().connect((err, client, done) => {
-      if (err) {
-        reject(responses.internalError("Failed to connect to database"));
-      } else {
-        getFeedId(client, userId, feedName).then((feedId) => {
-          const type = data.type,
-            info = data.data;
-
-          client.query('UPDATE plugins SET type = $1, data = $2 WHERE id = $3 AND feed_id = $4', [type, info, pluginId, feedId], (err, res) => {
+            client.query('UPDATE plugins SET type = $1, data = $2, priority = $3::real WHERE id = $4 AND feed_id = $5', [type, info, priority, pluginId, feedId], (err, res) => {
+              done();
+              if (err) {
+                reject(responses.internalError("Failed to update plugin"));
+              } else if (res.rowCount === 0) {
+                reject(responses.badRequest("No plugin with id '" + pluginId + "' in feed '" + feedName + "'"));
+              } else if (res.rowCount > 1) {
+                reject(responses.internalError("Multiple plugins with the same id"));
+              } else {
+                resolve({
+                  data: {}
+                });
+              }
+            });
+          }, (err) => {
             done();
-            if (err) {
-              reject(responses.internalError("Failed to update plugin"));
-            } else if (res.rowCount === 0) {
-              reject(responses.badRequest("No plugin with id '" + pluginId + "' in feed '" + feedName + "'"));
-            } else if (res.rowCount > 1) {
-              reject(responses.internalError("Multiple plugins with the same id"));
-            } else {
-              resolve({
-                data: {}
-              });
-            }
+            reject(err);
           });
-        }, (err) => {
-          done();
-          reject(err);
-        });
-      }
-    });
+        }
+      });
+    }, () => reject(responses.badRequest("Invalid plugin request")));
   });
 };
 
@@ -340,5 +361,5 @@ exports.availablePlugins = function (response) {
 exports.init = function (_pg) {
   pg = _pg;
 
-  plugin.init();
+  plugin.init(_pg);
 };
