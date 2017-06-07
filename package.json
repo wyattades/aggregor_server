@@ -24,7 +24,7 @@
     "request": "^2.79.0",
     "request-promise-native": "^1.0.4",
     "through2": "^2.0.1",
-    "node-pg-migrate": "GatorCoding/node-pg-migrate#8119bd6c42dbd0287438f130d74e48a3d4879e70"
+    "node-pg-migrate": "GatorCoding/node-pg-migrate"
   },
   "devDependencies": {
   },
