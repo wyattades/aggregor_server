@@ -240,11 +240,7 @@ function run(port) {
     function respond(code, msg='', data='', headers={}) {
 
       if (__DEV__) {
-        let print_data = data;
-        // if (Array.isArray(data)) {
-        //   print_data = `[Array:${data.length}]`;
-        // }
-        console.log({ code, msg, data: print_data });
+        console.log({ code, msg, data });
       }
 
       headers['Content-Type'] = 'application/json';

@@ -1,7 +1,6 @@
 const request = require('request'),
   cheerio = require('cheerio'),
-  url = require('url'),
-  parsers = require('../parse/rawPlugins');
+  url = require('url');
 
 const absolutePathCheck = new RegExp('^(?:[a-z]+:)?//', 'i');
 
@@ -44,73 +43,74 @@ exports.request = function (data, offset, amount) {
 };
 
 exports.parse = (data, pluginId) => new Promise((resolve, reject) => {
-  const baseUrl = 'http://' + data.urlData.hostname + '/',
-    path = data.urlData.pathname,
-    hostname = data.urlData.hostname;
+  reject('unsupported');
+  // const baseUrl = 'http://' + data.urlData.hostname + '/',
+  //   path = data.urlData.pathname,
+  //   hostname = data.urlData.hostname;
 
-  if (parsers.hasOwnProperty(hostname)) {
+  // if (parsers.hasOwnProperty(hostname)) {
 
-    const parser = parsers[hostname];
-    let $ = cheerio.load(data.body);
+  //   const parser = parsers[hostname];
+  //   let $ = cheerio.load(data.body);
 
-    let sumRatings = 0;
+  //   let sumRatings = 0;
 
-    parser
-    .crawl($)
-    .then((entries) => Promise.all(
-      entries.toArray().map((entry, index) => {
-        return parser
-        .parseEntry($, entry)
-        .then(determineMedia)
-        .then((entryData) => {
+  //   parser
+  //   .crawl($)
+  //   .then((entries) => Promise.all(
+  //     entries.toArray().map((entry, index) => {
+  //       return parser
+  //       .parseEntry($, entry)
+  //       .then(determineMedia)
+  //       .then((entryData) => {
 
-          // Assert that data has a valid rating and commentAmount
-          if (typeof entryData.rating !== "number" || isNaN(entryData.rating)) {
-            entryData.rating = 0;
-          }
-          if (typeof entryData.commentAmount !== "number" || isNaN(entryData.commentAmount)) {
-            entryData.commentAmount = 0;
-          }
+  //         // Assert that data has a valid rating and commentAmount
+  //         if (typeof entryData.rating !== "number" || isNaN(entryData.rating)) {
+  //           entryData.rating = 0;
+  //         }
+  //         if (typeof entryData.commentAmount !== "number" || isNaN(entryData.commentAmount)) {
+  //           entryData.commentAmount = 0;
+  //         }
 
-          // Assert that thumbnail is a valid image
-          if (entryData.thumbnailURL === undefined && entryData.mediaType === "image") {
-            entryData.thumbnailURL = entryData.imageURL;
-          } else if (entryData.thumbnailURL !== undefined && 
-              entryData.thumbnailURL.match(/\.(jpeg|jpg|gif|png)$/) === null) {
-            entryData.thumbnailURL = undefined;
-          }
+  //         // Assert that thumbnail is a valid image
+  //         if (entryData.thumbnailURL === undefined && entryData.mediaType === "image") {
+  //           entryData.thumbnailURL = entryData.imageURL;
+  //         } else if (entryData.thumbnailURL !== undefined && 
+  //             entryData.thumbnailURL.match(/\.(jpeg|jpg|gif|png)$/) === null) {
+  //           entryData.thumbnailURL = undefined;
+  //         }
 
-          sumRatings += entryData.rating;
+  //         sumRatings += entryData.rating;
 
-          // If a link  is a relative path, prefix it with the domain
-          ['authorURL', 'link', 'commentURL', 'categoryURL'].forEach(function (link) {
-            if (entryData[link] !== undefined && !absolutePathCheck.test(entryData[link])) {
-              entryData[link] = url.resolve(baseUrl, entryData[link]);
-            }
-          });
+  //         // If a link  is a relative path, prefix it with the domain
+  //         ['authorURL', 'link', 'commentURL', 'categoryURL'].forEach(function (link) {
+  //           if (entryData[link] !== undefined && !absolutePathCheck.test(entryData[link])) {
+  //             entryData[link] = url.resolve(baseUrl, entryData[link]);
+  //           }
+  //         });
 
-          entryData.pluginPriority = data.plugin.priority || 0;
-          entryData.pluginId = pluginId;
-          entryData.id = index + ':' + pluginId;
-          entryData.plugin = parser.label + path;
-          entryData.votable = parser.votable;
-          return Promise.resolve(entryData);
-        });
-      })
-    ))
-    .then((entries) => {
-      const inverseAvg = entries.length / sumRatings;
+  //         entryData.pluginPriority = data.plugin.priority || 0;
+  //         entryData.pluginId = pluginId;
+  //         entryData.id = index + ':' + pluginId;
+  //         entryData.plugin = parser.label + path;
+  //         entryData.votable = parser.votable;
+  //         return Promise.resolve(entryData);
+  //       });
+  //     })
+  //   ))
+  //   .then((entries) => {
+  //     const inverseAvg = entries.length / sumRatings;
 
-      for (let entryData of entries) {
-        entryData.priority = entryData.rating * inverseAvg;
-      }
-      resolve(entries);
-    })
-    .then(resolve, reject);
+  //     for (let entryData of entries) {
+  //       entryData.priority = entryData.rating * inverseAvg;
+  //     }
+  //     resolve(entries);
+  //   })
+  //   .then(resolve, reject);
 
-  } else {
-    reject('Given plugin does not have a supported parser');
-  }
+  // } else {
+  //   reject('Given plugin does not have a supported parser');
+  // }
 });
 
 

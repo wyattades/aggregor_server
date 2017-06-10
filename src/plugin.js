@@ -56,7 +56,7 @@ exports.validPlugin = plugin => new Promise((resolve, reject) => {
         if (!plugin.data[option.key].match(option.regex)) {
           return reject('request data value "' + option.key + '" is invalid');
         }
-      } else if (option.default) {
+      } else if (option.default !== undefined) {
         plugin.data[option.key] = option.default;
       } else {
         return reject('request is missing "' + option.key + '" in "data"');
@@ -104,15 +104,18 @@ const processEntries = ({ type, id, normalPriority, offset }, plg, entries) => P
   entryData.pluginId = id;
   entryData.plugin = type;
   entryData.pluginURL = plg.BASE_URL;
-  entryData.id = realIndex + ':' + id;
+  entryData.id = `${realIndex}:${entryData.id}:${id}`;
   entryData.priority = realIndex * normalPriority;
 
   // Assert that data has a valid rating and commentAmount
-  if (typeof entryData.rating !== "number" || isNaN(entryData.rating)) {
+  if (isNaN(entryData.rating)) {
     entryData.rating = 0;
   }
-  if (typeof entryData.commentAmount !== "number" || isNaN(entryData.commentAmount)) {
+  if (isNaN(entryData.commentAmount)) {
     entryData.commentAmount = 0;
+  }
+  if (isNaN(entryData.date)) {
+    entryData.date = undefined;
   }
 
   // Assert that thumbnail is a valid image
@@ -124,7 +127,7 @@ const processEntries = ({ type, id, normalPriority, offset }, plg, entries) => P
   }
 
   // If a link is a relative path, prefix it with the domain
-  ['authorURL', 'link', 'commentURL', 'categoryURL'].forEach(function (link) {
+  ['authorURL', 'link', 'commentURL', 'categoryURL'].forEach(link => {
     if (entryData[link] !== undefined && !absolutePathCheck.test(entryData[link])) {
       entryData[link] = url.resolve(plg.BASE_URL, entryData[link]);
     }

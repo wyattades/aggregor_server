@@ -1,14 +1,10 @@
+// TODO:
 // https://github.com/reddit/reddit/wiki/OAuth2
 // https://github.com/reddit/reddit/wiki/API
 
-// const https = require('https'),
-//       FeedParser = require('feedparser'),
-//       stream = require('stream');
 const request = require('request-promise-native'),
-      cheerio = require('cheerio'),
-      parser = require('../parse/rawPlugins')['www.reddit.com']; //TEMP
+      cheerio = require('cheerio');
 
-// TODO: load json instead
 exports.BASE_URL = 'https://www.reddit.com/';
 
 exports.type = 'reddit';
@@ -20,41 +16,26 @@ exports.options = [
 exports.request = (data, offset, amount) => {
 
   const subpath = data.subreddit ? 'r/' + data.subreddit : '', 
-        uri = `${exports.BASE_URL}${subpath}?count=${offset}&limit=${amount}`;
+        uri = `${exports.BASE_URL}${subpath}.json?count=${offset}&limit=${amount}`;
 
   return request({ 
     uri, 
-    transform: cheerio.load
+    json: true,
   });
 };
 
-exports.parse = $ => parser.crawl($)
-  .then(entries => {
-
-    // I have to do this because entries.map returns cheerio object
-    let promises = [];
-    for (let i = 0; i < entries.length; i++) {
-      promises.push(parser.parseEntry($(entries[i])));
-    }
-
-    return Promise.all(promises);
-  });
-
-// exports.request = function(data) {
-//   let subreddits = data.subreddits,
-//       pt = stream.PassThrough();
-
-//   const uri = ROOT_URI + subreddits.join('+') + '.rss';
-
-//   https.get(uri, (res) => {
-//     res.pipe(pt);
-//   }).on('error', () => {
-//     pt.end();
-//   });
-
-//   return pt;
-// };
-
-// exports.parse = function() {
-//   return new FeedParser();
-// };
+exports.parse = body => Promise.resolve(body.data.children.map(
+  ({ data: { id, title, subreddit_name_prefixed, author, url, permalink, num_comments, thumbnail, created_utc } }) => ({
+    id,
+    title,
+    author,
+    category: subreddit_name_prefixed,
+    categoryURL: subreddit_name_prefixed,
+    link: url,
+    commentAmount: num_comments,
+    commentURL: permalink,
+    thumbnailURL: thumbnail,
+    date: !isNaN(created_utc) ? created_utc * 1000 : undefined,
+    authorURL: 'u/' + author,
+  }))
+);

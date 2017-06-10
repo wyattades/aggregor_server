@@ -188,6 +188,8 @@ exports.fetchFeed = (userId, feedName, page, response) => new Promise((resolve, 
 
               const plugins = res.rows;
 
+              // TODO: fix duplicate entries being returned
+
               // TODO move this to the database when we add or update plugin
               let totalPriority = 0;
               for (let i = 0; i < plugins.length; i++) {
@@ -205,7 +207,6 @@ exports.fetchFeed = (userId, feedName, page, response) => new Promise((resolve, 
               ))
               .then(results => {
                 done();
-
 
                 let entries = [], 
                     errors = {};

@@ -1,6 +1,8 @@
 const request = require('request'),
       url = require('url');
 
+// NOTE: in progress
+
 /*
     Checkout Noembed [https://noembed.com/], a free and opensource embeding service.
     Unless we want to write an embeding service ourselves!
