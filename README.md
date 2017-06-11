@@ -1,6 +1,6 @@
 # Aggregor Server <img src="https://travis-ci.org/wyattades/webapp.svg?branch=master"/>
 
-[Aggregor](http://www.aggregor.us/) is an aggregating website that pulls feeds from other sources into a single, susinct web page.  
+[Aggregor](http://www.aggregor.us/) is an aggregating website that pulls feeds from other sources into a single, susinct feed.  
 
 1. Setup
 2. Documentation  
@@ -79,20 +79,21 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Authentication:** token  
  **Request:**  
  **Response:** 
-  - names (array)  
+  - feedNames (array)  
  
 **Endpoint:** `/user/<username>/feed/<feed_name>`  
 **Methods:**
 
 - `POST`  
- **Description:** add a new plugin to the specified feed, returns parsed plugin. Use `raw` and pass `url` in the data object to receive raw HTML.  
+ **Description:** add a new plugin to the specified feed, returns plugin id.  
  **Authentication:** token  
  **Request:**  
   - type (string {64}; **required**)  
+  - priority (number [0,1]; **required**)
   - data (object; **required**)  
  
   **Response:**
-  - entries (array)
+  - id (string)
 
 - `GET`  
  **Description:** fetch plugins  
@@ -107,28 +108,27 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Request:**  
  **Response:**  
  
- **Endpoint:** `/user/<username>/feed/<feed_name>/<plugin_id>`  
+**Endpoint:** `/user/<username>/feed/<feed_name>/<page>`  
 **Methods:**
-
-- `POST`  
- **Description** add new plugin
- **Authentication:** token  
- **Request:**    
- **Response:**  
-  - id (string) 
-
-- `PUT`  
- **Description** update plugin settings
- **Authentication:** token  
- **Request:**    
- **Response:**  
-
 - `GET`  
- **Description:** fetch parsed plugin  
+ **Description** Fetch feed entries for certain page   
  **Authentication:** token  
  **Request:**    
  **Response:**  
   - entries (array)
+
+ **Endpoint:** `/user/<username>/feed/<feed_name>/<plugin_id>`  
+**Methods:**
+
+- `PUT`  
+ **Description** update plugin settings  
+ **Authentication:** token  
+ **Request:**    
+  - type (string {64}; **required**)  
+  - priority (number [0,1]; **required**)
+  - data (object; **required**)
+ 
+  **Response:**  
  
 - `DELETE`  
  **Description:** remove a plugin from the specified feed  

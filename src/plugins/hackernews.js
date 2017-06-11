@@ -18,9 +18,9 @@ exports.request = (data, offset, amount) => {
   const sliceBegin = offset % AMOUNT_PER_PAGE,
         sliceEnd = sliceBegin + amount;
 
-  const page = Math.floor(offset / AMOUNT_PER_PAGE),
-        page2 = Math.floor((offset + amount) / AMOUNT_PER_PAGE);
-
+  const page = Math.floor(offset / AMOUNT_PER_PAGE) + 1,
+        page2 = Math.floor((offset + amount - 1) / AMOUNT_PER_PAGE) + 1;
+    
   if (page === page2) {
     return requestPage(page)
     .then(parse)
@@ -29,7 +29,7 @@ exports.request = (data, offset, amount) => {
   } else {
     return requestPage(page)
     .then(parse)
-    .then(entries => requestPage(page)
+    .then(entries => requestPage(page2)
       .then(parse)
       .then(entries2 => 
       Promise.resolve(entries.concat(entries2).slice(sliceBegin, sliceEnd)))

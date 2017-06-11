@@ -36,6 +36,6 @@ exports.parse = body => Promise.resolve(body.data.children.map(
     commentURL: permalink,
     thumbnailURL: thumbnail,
     date: !isNaN(created_utc) ? created_utc * 1000 : undefined,
-    authorURL: 'u/' + author,
+    authorURL: `u/${author}`,
   }))
 );
