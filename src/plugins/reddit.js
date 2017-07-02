@@ -9,6 +9,8 @@ exports.BASE_URL = 'https://www.reddit.com/';
 
 exports.type = 'reddit';
 
+exports.label = 'Reddit';
+
 exports.options = [
   { key: 'subreddit', regex: /^[_A-Za-z0-9]{1,21}$/, default: '' },
 ];

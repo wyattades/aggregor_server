@@ -1,5 +1,6 @@
 const http = require('http'),
-      url = require('url');
+      url = require('url'),
+      Joi = require('joi');
 
 const config = require('../config'),
       pg = require('./pg'),
@@ -7,185 +8,169 @@ const config = require('../config'),
       auth = require('./auth'),
       feed = require('./feed'),
       utils = require('./utils'),
-      responses = require('./responses');
+      responses = require('./responses'),
+      regexRoute = utils.regexRoute;
 
 const __DEV__ = process.env.NODE_ENV === 'development';
 
-const MACROS = {
-  user_name: '([_a-zA-Z0-9]{4,32})',
-  feed_name: '([_a-zA-Z0-9]{1,32})',
-  plugin_id: '([a-z0-9-]{36})',
-  page: '([0-9]+)',
-};
-
+const patternSchema = (type) => Joi.string().regex(new RegExp(`^${utils.MACROS[type]}$`));
 
 const ROUTES = {
-  user_new: {
+
+  login: {
+    endpoint: regexRoute('/session'),
+    methods: ['POST'],
+    content_types: ['application/json'],
+    schema: Joi.object({
+      username: Joi.string().required(),
+      password: Joi.string().required(),
+    }),
+    handle: (data) => user.loginUser(data)
+  },
+
+  logout: {
+    endpoint: regexRoute('/session'),
+    methods: ['DELETE'],
+    authenticate: true,
+    handle: (data, match, authInfo) => user.logoutUser(authInfo)
+  },
+  
+  create_user: {
     endpoint: regexRoute('/user'),
     methods: ['POST'],
     content_types: ['application/json'],
-    handle: (req) => {
-      return new Promise( (resolve, reject) => {
-        utils.aggregateStream(req).then( (data) => {
-          user.newUser(data.toString()).then(resolve, reject);
-        });
-      });
-    }
+    schema: Joi.object({
+      username: patternSchema('username').required(),
+      password: patternSchema('password').required(),
+      email: Joi.string().email().required(),
+      first_name: patternSchema('name'),
+      last_name: patternSchema('name'),
+    }),
+    handle: (data) => user.newUser(data)
   },
 
-  user_delete: {
-    endpoint: regexRoute('/user'),
+  delete_user: {
+    endpoint: regexRoute('/user/:username'),
     methods: ['DELETE'],
     content_types: ['application/json'],
     authenticate: true,
-    handle: (req, match, authInfo) => {
-      return new Promise( (resolve, reject) => {
-        utils.aggregateStream(req).then( (data) => {
-          user.deleteUser(authInfo, data.toString()).then(resolve, reject);
-        });
-      });
-    }
+    schema: Joi.object({
+      password: patternSchema('password').required(),
+    }),
+    handle: (data, match, authInfo) => user.deleteUser(authInfo, data)
   },
 
-  user_login: {
-    endpoint: regexRoute('/user/login'),
-    methods: ['POST'],
-    content_types: ['application/json'],
-    handle: (req) => {
-      return new Promise( (resolve, reject) => {
-        utils.aggregateStream(req).then( (data) => {
-          user.loginUser(data.toString()).then(resolve, reject);
-        });
-      });
-    }
-  },
-
-  user_logout: {
-    endpoint: regexRoute('/user/logout'),
-    methods: ['DELETE'],
-    authenticate: true,
-    handle: (req, match, authInfo) => {
-      return new Promise( (resolve, reject) => {
-        user.logoutUser(authInfo).then(resolve, reject);
-      });
-    }
-  },
-
-  fetch_feeds: {
-    endpoint: regexRoute('/user/:user_name/feed'),
+  fetch_user: {
+    endpoint: regexRoute('/user/:username'),
     methods: ['GET'],
     authenticate: true,
-    handle: (req, match, authInfo, res) => {
-      return new Promise( (resolve, reject) => {
-        feed.fetchFeeds(authInfo.user.id, res).then(resolve, reject);
-      });
-    }
+    handle: (data, match, authInfo, res) => user.fetchUser(authInfo.user, res)
   },
 
-  create_feed: {
-    endpoint: regexRoute('/user/:user_name/feed'),
-    methods: ['POST'],
-    content_types: ['application/json'],
-    authenticate: true,
-    handle: (req, match, authInfo) => {
-      return new Promise( (resolve, reject) => {
-        utils.aggregateStream(req).then( (data) => {
-          feed.createFeed(authInfo.user.id, data.toString()).then(resolve, reject);
-        });
-      });
-    }
-  },
-
-  delete_feed: {
-    endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
-    methods: ['DELETE'],
-    authenticate: true,
-    handle: (req, match, authInfo) => {
-      return new Promise( (resolve, reject) => {
-        feed.deleteFeed(authInfo.user.id, match[2]).then(resolve, reject);
-      });
-    }
-  },
-
-  fetch_plugins: {
-    endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
-    methods: ['GET'],
-    authenticate: true,
-    handle: (req, match, authInfo, res) => {
-      return new Promise( (resolve, reject) => {
-        feed.fetchPlugins(authInfo.user.id, match[2], res).then(resolve, reject);
-      });
-    }
-  },
-
-  add_plugin: {
-    endpoint: regexRoute('/user/:user_name/feed/:feed_name'),
-    methods: ['POST'],
-    content_types: ['application/json'],
-    authenticate: true,
-    handle: (req, match, authInfo, res) => {
-      return new Promise( (resolve, reject) => {
-        utils.aggregateStream(req).then( (data) => {
-          feed.addPlugin(authInfo.user.id, match[2], data.toString(), res).then(resolve, reject);
-        });
-      });
-    }
-  },
-
-  fetch_feed: {
-    endpoint: regexRoute('/user/:user_name/feed/:feed_name/:page'),
-    methods: ['GET'],
-    authenticate: true,
-    handle: (req, match, authInfo, res) => {
-      return new Promise( (resolve, reject) => {
-        feed.fetchFeed(authInfo.user.id, match[2], match[3], res).then(resolve, reject);
-      });
-    }
-  },
-
-  update_plugin: {
-    endpoint: regexRoute('/user/:user_name/feed/:feed_name/:plugin_id'),
+  update_user: {
+    endpoint: regexRoute('/user/:username'),
     methods: ['PUT'],
     authenticate: true,
     content_types: ['application/json'],
-    handle: (req, match, authInfo, res) => {
-      return new Promise( (resolve, reject) => {
-        utils.aggregateStream(req).then( (data) => {
-          feed.updatePlugin(authInfo.user.id, match[2], match[3], data.toString()).then(resolve, reject);
-        });
-      });
-    }
+    schema: Joi.object({
+      username: patternSchema('username'),
+      password: patternSchema('password'),
+      email: Joi.string().email().optional()  ,
+      first_name: patternSchema('name'),
+      last_name: patternSchema('name'),
+    }),
+    handle: (data, match, authInfo, res) => user.updateUser(authInfo.user, data)
+  },
+
+  fetch_feeds: {
+    endpoint: regexRoute('/user/:username/feed'),
+    methods: ['GET'],
+    authenticate: true,
+    handle: (data, match, authInfo, res) => feed.fetchFeeds(authInfo.user.id, res)
+  },
+
+  create_feed: {
+    endpoint: regexRoute('/user/:username/feed'),
+    methods: ['POST'],
+    content_types: ['application/json'],
+    authenticate: true,
+    schema: Joi.object({
+      name: patternSchema('feed_name').required(),
+    }),
+    handle: (data, match, authInfo) => feed.createFeed(authInfo.user.id, data)
+  },
+
+  delete_feed: {
+    endpoint: regexRoute('/user/:username/feed/:feed_name'),
+    methods: ['DELETE'],
+    authenticate: true,
+    handle: (data, match, authInfo) => feed.deleteFeed(authInfo.user.id, match[2])
+  },
+
+  update_feed: {
+    endpoint: regexRoute('/user/:username/feed/:feed_name'),
+    methods: ['PUT'],
+    authenticate: true,
+    content_types: ['application/json'],
+    schema: Joi.object({
+      name: patternSchema('feed_name').required(),
+    }),
+    handle: (data, match, authInfo, res) => feed.updateFeed(authInfo.user.id, match[2], data)
+  },
+
+  fetch_plugins: {
+    endpoint: regexRoute('/user/:username/feed/:feed_name/plugin'),
+    methods: ['GET'],
+    authenticate: true,
+    handle: (data, match, authInfo, res) => feed.fetchPlugins(authInfo.user.id, match[2], res)
+  },
+
+  add_plugin: {
+    endpoint: regexRoute('/user/:username/feed/:feed_name/plugin'),
+    methods: ['POST'],
+    content_types: ['application/json'],
+    authenticate: true,
+    schema: Joi.object({
+      type: patternSchema('type').required(),
+      priority: Joi.number().min(0).max(1).required(),
+      data: Joi.object(),
+    }),
+    handle: (data, match, authInfo, res) => feed.addPlugin(authInfo.user.id, match[2], data, res)
+  },
+
+  fetch_feed: {
+    endpoint: regexRoute('/user/:username/feed/:feed_name/:page'),
+    methods: ['GET'],
+    authenticate: true,
+    handle: (data, match, authInfo, res) => feed.fetchFeed(authInfo.user.id, match[2], match[3], res)
+  },
+
+  update_plugin: {
+    endpoint: regexRoute('/user/:username/feed/:feed_name/plugin/:plugin_id'),
+    methods: ['PUT'],
+    authenticate: true,
+    content_types: ['application/json'],
+    schema: Joi.object({
+      type: patternSchema('type'),
+      priority: Joi.number().min(0).max(1),
+      data: Joi.object(),
+    }),
+    handle: (data, match, authInfo, res) => feed.updatePlugin(authInfo.user.id, match[2], match[3], data)
   },
 
   remove_plugin: {
-    endpoint: regexRoute('/user/:user_name/feed/:feed_name/:plugin_id'),
+    endpoint: regexRoute('/user/:username/feed/:feed_name/plugin/:plugin_id'),
     methods: ['DELETE'],
     authenticate: true,
-    handle: (req, match, authInfo) => {
-      return new Promise( (resolve, reject) => {
-        feed.removePlugin(authInfo.user.id, match[2], match[3]).then(resolve, reject);
-      });
-    }
+    handle: (data, match, authInfo) => feed.removePlugin(authInfo.user.id, match[2], match[3])
   },
   
   fetch_available_plugins: {
     endpoint: regexRoute('/plugins'),
     methods: ['GET'],
-    handle: (req, match, authInfo, res) => {
-      return new Promise((resolve, reject) => {
-        feed.availablePlugins(res).then(resolve, reject);
-       });
-     }
-   }
+    handle: (data, match, authInfo, res) => feed.availablePlugins(res)
+  }
 };
-
-function regexRoute(rt) {
-
-  let re = `^${rt}/?$`
-    .replace(/:(\w+)/g, (m, name) => MACROS[name] ? MACROS[name] : m);
-
-  return new RegExp(re);
-}
 
 function matchUrl(req) {
   const reqUrl = url.parse(req.url, true),
@@ -210,8 +195,8 @@ function matchUrl(req) {
   else if (route.content_types && !route.content_types.includes(content_type)) {
     return [undefined, undefined, responses.badRequest('Invalid content type provided')];
   }
-
-  return [route, path.match(route.endpoint), undefined];
+  const match = path.match(route.endpoint);
+  return [route, match, undefined];
 }
 
 function init() {
@@ -288,17 +273,36 @@ function run(port) {
 
     //TODO: instead of responding in feed.js, why don't we pass our response into resolve(response)?
     function handle() {
-      route.handle(req, match, authInfo, res).then(
-        (resp) => {
-          if(!resp.handled) {
-            respond(resp.code || 200, resp.msg || 'OK', resp.data);
-          }
-        },
-        (err) => {
-          if (!err.code) err = responses.internalError(JSON.stringify(err));
-          respond(err.code, err.msg, err.data);
+      Promise.resolve().then(() => {
+        if (route.schema) {
+          return utils.aggregateStream(req).then(data => {
+            try {
+              data = JSON.parse(data);
+            } catch(err) {
+              throw responses.badRequest('Invalid JSON request data');
+            }
+            const { error, value } = Joi.validate(data, route.schema);
+            if (error) {
+              console.log('JOI ERROR:', error);
+              throw responses.badRequest(error.details[0].message);
+            } else {
+              return Promise.resolve(value);
+            }
+          });
+        } else {
+          return Promise.resolve();
         }
-      );
+      })
+      .then(data => route.handle(data, match, authInfo, res))
+      .then(resp => {
+        if(!resp.handled) {
+          respond(resp.code || 200, resp.msg || 'OK', resp.data);
+        }
+      })
+      .catch(err => {
+        if (err.code === undefined) err = responses.internalError(JSON.stringify(err));
+        respond(err.code, err.msg, err.data);
+      });
     }
   }).listen(port);
 }

@@ -17,6 +17,18 @@ const ID_SIZE = 4;
 
 var pg;
 
+const respond = (response, data) => {
+  const responseData = {
+    code: 200,
+    msg: "OK",
+    data: data
+  };
+
+  response.writeHead(200);
+  response.write(JSON.stringify(responseData));
+  response.end();
+};
+
 function generateId() {
   return new Promise( (resolve, reject) => {
     var client = undefined,
@@ -81,7 +93,7 @@ function getUserByUsername(username) {
   });
 }
 
-// Return a minimal form of the user
+// Return data of the user
 exports.getAuthedUser = function(token) {
   return new Promise((resolve, reject) => {
     pg.pool().connect((err, client, done) => {
@@ -89,7 +101,7 @@ exports.getAuthedUser = function(token) {
         reject(responses.internalError("Failed to connect to database"));
       } else {
         validateAuthToken(client, token).then((userId) => {
-          client.query('SELECT id, username, email, first_name, last_name, created_on FROM users WHERE id = $1', [userId], (err, res) => {
+          client.query('SELECT * FROM users WHERE id = $1', [userId], (err, res) => {
             done();
             if (err) {
               reject(responses.internalError("Failed to validate auth token"));
@@ -112,112 +124,68 @@ exports.getAuthedUser = function(token) {
 
 exports.newUser = function(data) {
   return new Promise( (resolve, reject) => {
-    var userInfo;
-    try {
-      userInfo = JSON.parse(data);
-    } catch(e) {
-      return reject(responses.badRequest('Invalid JSON in request'));
-    }
+    generateSalt().then( (salt) => {
+      Promise.all([generateId(), generatePasswordHash(data.password, salt)]).then( (vals) => {
+        const [id, hash] = vals;
 
-    if(userInfo) {
-      const requiredInfo = {
-        'email': /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-        'username': /^(?![_-])(?!.*[_-]{2})[a-zA-Z0-9_-]{3,31}[a-zA-Z0-9]$/,
-        'password': /(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d$@$!%*#?&]{8,64}$/,
-      },
-        keys = Reflect.ownKeys(userInfo),
-        requiredKeys = Reflect.ownKeys(requiredInfo);
-
-      var missing = [];
-      requiredKeys.forEach((i) => {
-        let key = keys.find((k) => k === i);
-        if(!key || !userInfo[key].trim().length)
-          missing.push(i);
-      });
-
-      if(missing.length) {
-        return reject(responses.badRequest(`Missing required value${missing.length > 1 ? 's' : ''}: ${missing.join(", ")}`));
-      }
-
-      for (const k of requiredKeys) {
-        if (!requiredInfo[k].test(userInfo[k])) {
-          return reject(responses.badRequest(`${k} does not match criteria`));
-        }
-      }
-
-      generateSalt().then( (salt) => {
-        Promise.all([generateId(), generatePasswordHash(userInfo.password, salt)]).then( (vals) => {
-          const [id, hash] = vals;
-
-          pg.pool().connect((err, client, done) => {
-            if (err) {
-              responses.internalError("Failed to connect to database");
-            } else {
-              client.query('INSERT INTO users VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (username) DO NOTHING', [
-                  id,
-                  userInfo.username,
-                  userInfo.email,
-                  userInfo.first_name || '',
-                  userInfo.last_name || '',
-                  salt,
-                  hash,
-                  (new Date(Date.now())).toISOString()
-                ],
-                (err, res) => {
-                  done();
-                  if (err) {
-                    reject(responses.internalError(err));
-                  } else if (res.rowCount === 0) {
-                    reject(responses.conflict('This username is already taken'));
-                  } else if (res.rowCount > 1) {
-                    reject(responses.internalError('Duplicate matching usernames'));
-                  } else {
-                    newAuthToken(id).then(
-                      (token) => resolve({data: {token}}),
-                      (err) => reject(responses.internalError(err))
-                    );
-                  }
+        pg.pool().connect((err, client, done) => {
+          if (err) {
+            responses.internalError("Failed to connect to database");
+          } else {
+            client.query('INSERT INTO users VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (username) DO NOTHING', [
+                id,
+                data.username,
+                data.email,
+                data.first_name || '',
+                data.last_name || '',
+                salt,
+                hash,
+                (new Date(Date.now())).toISOString()
+              ],
+              (err, res) => {
+                done();
+                if (err) {
+                  reject(responses.internalError(err));
+                } else if (res.rowCount === 0) {
+                  reject(responses.conflict('This username is already taken'));
+                } else if (res.rowCount > 1) {
+                  reject(responses.internalError('Duplicate matching usernames'));
+                } else {
+                  newAuthToken(id).then(
+                    (token) => resolve({data: {token}}),
+                    (err) => reject(responses.internalError(err))
+                  );
                 }
-              );
-            }
-          });
+              }
+            );
+          }
         });
       });
-    }
+    });
   });
 };
 
 // TODO: this function and many others open more than one pg.pool.connect
 exports.loginUser = function(data) {
   return new Promise( (resolve, reject) => {
+    getUserByUsername(data.username).then( (user) => {
+      const passwordHash = user.password_hash,
+            passwordSalt = user.password_salt,
+            submittedPassword = data.password;
 
-    try {
-      data = JSON.parse(data);
-    } catch(err) {
-      reject(responses.badRequest("Bad input data for login"));
-    }
-
-    if(data && data.username && data.password) {
-      const username = data.username;
-      getUserByUsername(username).then( (user) => {
-        const passwordHash = user.password_hash,
-              passwordSalt = user.password_salt,
-              submittedPassword = data.password;
-
-        generatePasswordHash(submittedPassword, passwordSalt).then( (hash) => {
-          if(crypto.timingSafeEqual(Buffer.from(passwordHash), Buffer.from(hash))) {
-            newAuthToken(user.id).then(
-              (token) => resolve({data: {token}}),
-              (err) => reject(responses.internalError(err))
-            );
-          } else {
-            reject(responses.unauthorized("Bad login information"));
-          }
-        });
-      }, (err) => {
-        reject(err);
+      generatePasswordHash(submittedPassword, passwordSalt).then( (hash) => {
+        if(crypto.timingSafeEqual(Buffer.from(passwordHash), Buffer.from(hash))) {
+          newAuthToken(user.id).then(
+            (token) => resolve({data: {token}}),
+            (err) => reject(responses.internalError(err))
+          );
+        } else {
+          reject(responses.unauthorized("Bad login information"));
+        }
       });
-    }
+    }, (err) => {
+      reject(err);
+      });
   });
 };
 
@@ -239,58 +207,74 @@ exports.logoutUser = function(authInfo) {
   });
 };
 
+exports.fetchUser = (userData, response) => {
+  respond(response, {
+    email: userData.email,
+    username: userData.username,
+    created_on: userData.created_on,
+  });
+  return Promise.resolve({ handled: true });
+};
+
+exports.updateUser = (userData, data) => new Promise((resolve, reject) => {
+  generateSalt()
+  .then(salt => generatePasswordHash(data.password, salt)
+  .then(hash => {
+    pg.pool().connect((err, client, done) => {
+      if (err) {
+        reject(responses.internalError("Failed to connect to database"));
+      } else {
+        client.query('UPDATE users SET password_hash = $1, password_salt = $2, username = $3, email = $4 WHERE id = $5', [hash, salt, data.username, data.email, userData.id], (err, res) => {
+          done();
+          if (err) {
+            reject(responses.internalError("Failed to connect to database"));
+          } else if (res.rowCount === 0) {
+            reject(responses.badRequest("No user exists with given id"));
+          } else if (res.rowCount > 1) {
+            reject(responses.internalError("Multiple users with the same id"));
+          } else {
+            resolve({data:{}});
+          }
+        });
+      }
+    });
+  }));
+});
+
 //NOTE: require username and password?
 exports.deleteUser = function(authInfo, data) {
   return new Promise((resolve, reject) => {
+    const { password_salt, password_hash, id } = authInfo.user;
 
-    try {
-      data = JSON.parse(data);
-    } catch(e) {
-      return reject(responses.badRequest("Bad request data in deleting user"));
-    }
-
-    if (data && data.username) {
-      const username = data.username;
-      getUserByUsername(username).then((user) => {
-        const passwordHash = user.password_hash,
-              passwordSalt = user.password_salt,
-              submittedPassword = data.password;
-
-        generatePasswordHash(submittedPassword, passwordSalt).then((hash) => {
-          if(crypto.timingSafeEqual(Buffer.from(passwordHash), Buffer.from(hash))) {
-            pg.pool().connect((err, client, done) => {
-              if (err) {
-                reject(responses.internalError("Failed to connect to database"));
-              } else {
-                deleteAuthToken(client, authInfo.token).then(() => {
-                  client.query('DELETE FROM users WHERE id = $1', [user.id], (err, res) => {
-                    done();
-                    if (err) {
-                      reject(responses.internalError("Failed to connect to database"));
-                    } else if (res.rowCount === 0) {
-                      reject(responses.badRequest("No user exists with given id"));
-                    } else if (res.rowCount > 1) {
-                      reject(responses.internalError("Multiple users with the same id"));
-                    } else {
-                      resolve({data:{}});
-                    }
-                  });
-                }, (err) => {
-                  done();
-                  reject(err);
-                });
-              }
-            });
+    generatePasswordHash(data.password, password_salt).then((hash) => {
+      if(crypto.timingSafeEqual(Buffer.from(password_hash), Buffer.from(hash))) {
+        pg.pool().connect((err, client, done) => {
+          if (err) {
+            reject(responses.internalError("Failed to connect to database"));
           } else {
-            reject(responses.unauthorized("Bad login information"));
+            deleteAuthToken(client, authInfo.token).then(() => {
+              client.query('DELETE FROM users WHERE id = $1', [id], (err, res) => {
+                done();
+                if (err) {
+                  reject(responses.internalError("Failed to connect to database"));
+                } else if (res.rowCount === 0) {
+                  reject(responses.badRequest("No user exists with given id"));
+                } else if (res.rowCount > 1) {
+                  reject(responses.internalError("Multiple users with the same id"));
+                } else {
+                  resolve({data:{}});
+                }
+              });
+            }, (err) => {
+              done();
+              reject(err);
+            });
           }
         });
-      }, (err) => {
-        reject(err);
-      });
-    } else {
-      reject(responses.badRequest("Invalid request data in deleting user"));
-    }
+      } else {
+        reject(responses.unauthorized("Bad login information"));
+      }
+    });
   });
 };
 

@@ -18,6 +18,35 @@
 
 Every response contains a `code` corresponding to a valid HTTP, a `msg` containing a valid HTTP message, and a `data` object which is documented per endpoint & method below.  
 
+**Endpoint:** `/plugins`  
+**Methods:**  
+- `POST`  
+ **Description:** get available plugins  
+ **Authentication:** none  
+ **Request:**   
+ **Response:**
+  - plugins (object)
+
+**Endpoint:** `/session`  
+**Methods:**  
+- `POST`  
+ **Description:** generate a new authentication token  
+ **Authentication:** none  
+ **Request:**  
+  - username (string {32}; **required**)
+  - password (string {8-120}; **required**)
+  
+  **Response:**
+  - token (string)
+
+**Endpoint:** `/session`  
+**Methods:**
+- `DELETE`  
+ **Description:** delete the authentication token that was sent alongside the request  
+ **Authentication:** token  
+ **Request:**  
+ **Response:** 
+
 **Endpoint:** `/user`  
 **Methods:**
 - `POST`  
@@ -34,35 +63,36 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
   **Response:**  
    - token (string)
 
-- `DELETE`  
+**Endpoint:** `/user/<username>`  
+**Methods:**
+ - `PUT`  
+ **Description:** update user's password  
+ **Authentication:** token  
+ **Request:**  
+  
+   - username (string {32})
+   - email (string {50})
+   - first_name (string {32})
+   - last_name (string {32})
+   - password (string {8-120})  
+   
+   **Response:**  
+
+ - `DELETE`  
  **Description:** delete a user  
  **Authentication:** token  
  **Request:**
+   - password (string {8-120}; **required**)  
+   
+   **Response:**   
 
-  - username (string {32}; **required**)
-  - password (string {8-120}; **required**)  
-  
-  **Response:**  
-
-**Endpoint:** `/user/login`  
-**Methods:**  
-- `POST`  
- **Description:** generate a new authentication token  
- **Authentication:** none  
- **Request:**  
-  - username (string {32}; **required**)
-  - password (string {8-120}; **required**)
-  
-  **Response:**
-  - token (string)
-
-**Endpoint:** `/user/logout`  
-**Methods:**
-- `DELETE`  
- **Description:** delete the authentication token that was sent alongside the request  
+ - `GET`  
+ **Description:** fetch user data  
  **Authentication:** token  
- **Request:**  
- **Response:**  
+ **Request:**   
+ **Response:**   
+   - email (string)
+   - username (string)
  
 **Endpoint:** `/user/<username>/feed`  
 **Methods:**
@@ -80,8 +110,34 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Request:**  
  **Response:** 
   - feedNames (array)  
- 
+
 **Endpoint:** `/user/<username>/feed/<feed_name>`  
+**Methods:**
+
+- `PUT`  
+ **Description:** update feed 
+ **Authentication:** token  
+ **Request:**  
+  - name (string {32})
+
+  **Response:**
+
+- `DELETE`  
+ **Description:** deletes specified feed  
+ **Authentication:** token  
+ **Request:**  
+ **Response:**
+
+**Endpoint:** `/user/<username>/feed/<feed_name>/<page>`  
+**Methods:**
+- `GET`  
+ **Description** Fetch feed entries for certain page   
+ **Authentication:** token  
+ **Request:**    
+ **Response:**  
+  - entries (array)
+
+**Endpoint:** `/user/<username>/feed/<feed_name>/plugin`  
 **Methods:**
 
 - `POST`  
@@ -90,7 +146,7 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Request:**  
   - type (string {64}; **required**)  
   - priority (number [0,1]; **required**)
-  - data (object; **required**)  
+  - data (object (*see Plugin Data*); **required**)  
  
   **Response:**
   - id (string)
@@ -101,32 +157,17 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Request:**    
  **Response:** 
   - plugins (array)
- 
-- `DELETE`  
- **Description:** remove specified feed  
- **Authentication:** token  
- **Request:**  
- **Response:**  
- 
-**Endpoint:** `/user/<username>/feed/<feed_name>/<page>`  
-**Methods:**
-- `GET`  
- **Description** Fetch feed entries for certain page   
- **Authentication:** token  
- **Request:**    
- **Response:**  
-  - entries (array)
 
- **Endpoint:** `/user/<username>/feed/<feed_name>/<plugin_id>`  
+ **Endpoint:** `/user/<username>/feed/<feed_name>/plugin/<plugin_id>`  
 **Methods:**
 
 - `PUT`  
  **Description** update plugin settings  
  **Authentication:** token  
  **Request:**    
-  - type (string {64}; **required**)  
-  - priority (number [0,1]; **required**)
-  - data (object; **required**)
+  - type (string {64})  
+  - priority (number [0,1])
+  - data (object (*see Plugin Data*))
  
   **Response:**  
  
@@ -139,3 +180,10 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
 ### Authentication  
 
 To authenticate with the server, simply pass the header `X-Aggregor-Token: <token>` along with every request that requires it.
+
+### Plugin Data
+Data object that is passed when creating or updating plugin must match the following structure, depending on plugin type:
+- hackernews
+- reddit:
+  - subreddit (string {32}; **optional**)
+

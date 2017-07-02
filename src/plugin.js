@@ -3,6 +3,8 @@ const fs = require('fs'),
       url = require('url');
 
 function Plugin(proto) {
+  this.type = proto.type;
+  this.label = proto.label;
   this.request = proto.request;
   this.parse = proto.parse;
   this.options = proto.options;
@@ -11,7 +13,9 @@ function Plugin(proto) {
 exports.Plugin = Plugin;
 
 var PLUGINS = {};
+var RETURN_PLUGINS = {};
 exports.installedPlugins = PLUGINS;
+exports.availablePlugins = RETURN_PLUGINS;
 
 var pg;
 
@@ -25,6 +29,11 @@ exports.init = function(_pg) {
             type = proto.type.trim();
 
       PLUGINS[type] = new Plugin(proto);
+      RETURN_PLUGINS[type] = {
+        type: proto.type,
+        label: proto.label,
+        options: proto.options,
+      };
     });
   });
 };
@@ -35,36 +44,25 @@ exports.validPluginType = type => PLUGINS.hasOwnProperty(type);
 
 exports.validPlugin = plugin => new Promise((resolve, reject) => {
 
-  if (typeof plugin !== 'object') {
-    reject('request data must be an object');
-  } else if (typeof plugin.data !== 'object') {
-    reject('request must contain an object: "data"');
+  const plg = PLUGINS[plugin.type],
+      options = plg.options;
 
-  } else if (typeof plugin.priority !== 'number' || isNaN(plugin.priority) || plugin.priority < 0 || plugin.priority > 1) {
-    reject('request must contain number "priority" in range [0,1]');
-  } else if (typeof plugin.type !== 'string' || !PLUGINS.hasOwnProperty(plugin.type)) {
-    reject('request must contain a valid plugin "type"');
-  } else {
+  for (let i = 0; i < options.length; i++) {
+    const option = options[i];
 
-    const plg = PLUGINS[plugin.type],
-        options = plg.options;
-
-    for (let i = 0; i < options.length; i++) {
-      const option = options[i];
-
-      if (plugin.data.hasOwnProperty(option.key)) {
-        if (!plugin.data[option.key].match(option.regex)) {
-          return reject('request data value "' + option.key + '" is invalid');
-        }
-      } else if (option.default !== undefined) {
-        plugin.data[option.key] = option.default;
-      } else {
-        return reject('request is missing "' + option.key + '" in "data"');
+    if (plugin.data.hasOwnProperty(option.key)) {
+      if (!plugin.data[option.key].match(option.regex)) {
+        return reject('request data value "' + option.key + '" is invalid');
       }
+    } else if (option.default !== undefined) {
+      plugin.data[option.key] = option.default;
+    } else {
+      return reject('request is missing "' + option.key + '" in "data"');
     }
-
-    resolve();
   }
+
+  resolve();
+
 });
 
 exports.fetchPlugin = _plugin => new Promise((resolve, reject) => {

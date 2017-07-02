@@ -11,6 +11,8 @@ const AMOUNT_PER_PAGE = 30;
 
 exports.type = 'hackernews';
 
+exports.label = 'HackerNews';
+
 exports.options = [];
 
 exports.request = (data, offset, amount) => {
