@@ -2,18 +2,19 @@
 // https://github.com/reddit/reddit/wiki/OAuth2
 // https://github.com/reddit/reddit/wiki/API
 
-const request = require('request-promise-native'),
-      cheerio = require('cheerio');
+const request = require('request-promise-native');
 
 exports.BASE_URL = 'https://www.reddit.com/';
-
-exports.type = 'reddit';
 
 exports.label = 'Reddit';
 
 exports.options = [
-  { key: 'subreddit', regex: /^[_A-Za-z0-9]{1,21}$/, default: '' },
+  { key: 'subreddit', label: 'Subreddit', prefix: 'r/', regex: /^[_A-Za-z0-9]{1,21}$/, default: '' },
 ];
+
+exports.icon = 'reddit';
+exports.iconFamily = 'FontAwesome';
+exports.color = '#149EF0';
 
 exports.request = (data, offset, amount) => {
 
@@ -23,6 +24,13 @@ exports.request = (data, offset, amount) => {
   return request({ 
     uri, 
     json: true,
+    resolveWithFullResponse: true,
+  })
+  .then(res => {
+    if (!res.request.uri.pathname.startsWith('/r/')) {
+      throw 'Invalid subreddit';
+    }
+    return res.body;
   });
 };
 

@@ -9,11 +9,13 @@ exports.BASE_URL = 'https://news.ycombinator.com/';
 
 const AMOUNT_PER_PAGE = 30;
 
-exports.type = 'hackernews';
-
 exports.label = 'HackerNews';
 
 exports.options = [];
+
+exports.icon = 'hacker-news';
+exports.iconFamily = 'FontAwesome';
+exports.color = '#ff6600';
 
 exports.request = (data, offset, amount) => {
 
@@ -39,7 +41,7 @@ exports.request = (data, offset, amount) => {
   }
 };
 
-exports.parse = x => x;
+exports.parse = x => Promise.resolve(x);
 
 const parse = $ => crawl($)
   .then(entries => {

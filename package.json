@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "An aggregating webapp prototype",
   "engines": {
-    "node": ">=6.6.0"
+    "node": "6.11.1"
   },
   "scripts": {
     "test": "node test/routes.test.js",
@@ -19,15 +19,15 @@
   "dependencies": {
     "cheerio": "^0.22.0",
     "feedparser": "^1.1.5",
+    "joi": "^10.6.0",
     "jsonwebtoken": "^7.1.9",
+    "node-pg-migrate": "GatorCoding/node-pg-migrate",
     "pg": "6.1.0",
     "request": "^2.79.0",
     "request-promise-native": "^1.0.4",
-    "through2": "^2.0.1",
-    "node-pg-migrate": "GatorCoding/node-pg-migrate"
+    "through2": "^2.0.1"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "keywords": [
     "node"
   ],

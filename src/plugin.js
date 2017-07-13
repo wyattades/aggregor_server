@@ -23,16 +23,24 @@ exports.init = function(_pg) {
   pg = _pg;
 
   fs.readdir('./plugins/', (err, files) => {
-    files.forEach((p) => {
-      const filename = p,
-            proto = require('./plugins/' + filename),
-            type = proto.type.trim();
+    files.forEach(filename => {
+      const proto = require('./plugins/' + filename),
+            type = filename.replace('.js', '');
+
+      proto.type = type;
 
       PLUGINS[type] = new Plugin(proto);
       RETURN_PLUGINS[type] = {
         type: proto.type,
         label: proto.label,
-        options: proto.options,
+        options: proto.options.map(option => {
+          return Object.assign({}, option, {
+            regex: option.regex.source,
+          });
+        }),
+        icon: proto.icon,
+        iconFamily: proto.iconFamily,
+        color: proto.color,
       };
     });
   });
@@ -73,27 +81,15 @@ exports.fetchPlugin = _plugin => new Promise((resolve, reject) => {
     return reject('Invalid plugin type: ' + type);
   }
 
-  plg.request(data, offset, amount)
-  .catch(err => {
-    console.log(err);
-    throw 'Failed to fetch plugin source';
+  plg.request(data, offset, amount).catch(err => {
+    throw new Error('Request Failed: ' + (typeof err === 'string' ? err : 'Unknown error'));
   })
-  .then(plg.parse)
-  .catch(err => {
-    console.log(err);
-    throw 'Failed to parse plugin';
-  })
+  .then(res => plg.parse(res).catch(err => {
+    throw new Error('Parse Failed: ' + (typeof err === 'string' ? err : 'Unknown error'));
+  }))
   .then(_entries => processEntries(_plugin, plg, _entries))
   .then(entries => resolve(entries))
-  .catch(err => {
-    if (typeof err !== 'string') {
-      console.log(err);
-      err = 'Uncaught error';
-    }
-    err = { err };
-    err.id = id;
-    resolve(err);
-  });
+  .catch(err => resolve({ err: err.message, id }));
 });
 
 const processEntries = ({ type, id, normalPriority, offset }, plg, entries) => Promise.resolve(entries.map((entryData, index) => {

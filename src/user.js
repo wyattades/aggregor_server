@@ -212,19 +212,32 @@ exports.fetchUser = (userData, response) => {
     email: userData.email,
     username: userData.username,
     created_on: userData.created_on,
+    first_name: userData.first_name,
+    last_name: userData.last_name,
   });
   return Promise.resolve({ handled: true });
 };
 
 exports.updateUser = (userData, data) => new Promise((resolve, reject) => {
+  const newData = Object.assign({}, userData, data);
+
   generateSalt()
-  .then(salt => generatePasswordHash(data.password, salt)
+  .then(salt => generatePasswordHash(newData.password, salt)
   .then(hash => {
     pg.pool().connect((err, client, done) => {
       if (err) {
         reject(responses.internalError("Failed to connect to database"));
       } else {
-        client.query('UPDATE users SET password_hash = $1, password_salt = $2, username = $3, email = $4 WHERE id = $5', [hash, salt, data.username, data.email, userData.id], (err, res) => {
+
+        client.query('UPDATE users SET username=$1,email=$2,first_name=$3,last_name=$4,password_salt=$5,password_hash=$6 WHERE id = $7', [
+          newData.username,
+          newData.email,
+          newData.first_name,
+          newData.last_name,
+          salt,
+          hash,
+          userData.id,
+        ], (err, res) => {
           done();
           if (err) {
             reject(responses.internalError("Failed to connect to database"));

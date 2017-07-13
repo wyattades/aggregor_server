@@ -109,7 +109,7 @@ exports.validateAuthToken = function(client, token) {
       if (err) {
         reject(responses.internalError(err));
       } else if (res.rowCount === 0) {
-        reject(responses.unauthorized());
+        reject(responses.unauthorized('Invalid or expired auth token'));
       } else if (res.rowCount > 1) {
         reject(responses.internalError("Multiple matching auth tokens!"));
       } else {

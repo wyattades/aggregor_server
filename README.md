@@ -93,6 +93,9 @@ Every response contains a `code` corresponding to a valid HTTP, a `msg` containi
  **Response:**   
    - email (string)
    - username (string)
+   - created_on (integer)
+   - first_name (string)
+   - last_name (string)
  
 **Endpoint:** `/user/<username>/feed`  
 **Methods:**

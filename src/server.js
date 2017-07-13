@@ -133,7 +133,7 @@ const ROUTES = {
     schema: Joi.object({
       type: patternSchema('type').required(),
       priority: Joi.number().min(0).max(1).required(),
-      data: Joi.object(),
+      data: Joi.object().required(),
     }),
     handle: (data, match, authInfo, res) => feed.addPlugin(authInfo.user.id, match[2], data, res)
   },
@@ -264,7 +264,7 @@ function run(port) {
           respond(err.code, err.msg, err.data);
         });
       } else {
-        const err = responses.unauthorized('Auth token is not valid');
+        const err = responses.unauthorized('Route requires an auth token');
         respond(err.code, err.msg, err.data);
       }
     } else {
