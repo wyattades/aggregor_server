@@ -18,7 +18,8 @@ exports.color = '#149EF0';
 
 exports.request = (data, offset, amount) => {
 
-  const subpath = data.subreddit ? 'r/' + data.subreddit : '', 
+  const hasSubreddit = typeof data.subreddit === 'string' && data.subreddit.length > 0,
+        subpath = hasSubreddit ? ('r/' + data.subreddit) : '', 
         uri = `${exports.BASE_URL}${subpath}.json?count=${offset}&limit=${amount}`;
 
   return request({ 
@@ -27,7 +28,7 @@ exports.request = (data, offset, amount) => {
     resolveWithFullResponse: true,
   })
   .then(res => {
-    if (!res.request.uri.pathname.startsWith('/r/')) {
+    if (hasSubreddit && !res.request.uri.pathname.startsWith('/r/')) {
       throw 'Invalid subreddit';
     }
     return res.body;

@@ -33,7 +33,7 @@ exports.init = function(_pg) {
       RETURN_PLUGINS[type] = {
         type: proto.type,
         label: proto.label,
-        options: proto.options.map(option => {
+        options: proto.options.map(option => { // convert RegExp values to strings
           return Object.assign({}, option, {
             regex: option.regex.source,
           });
@@ -50,22 +50,23 @@ const absolutePathCheck = new RegExp('^(?:[a-z]+:)?//', 'i');
 
 exports.validPluginType = type => PLUGINS.hasOwnProperty(type);
 
-exports.validPlugin = plugin => new Promise((resolve, reject) => {
+exports.validPlugin = _plugin => new Promise((resolve, reject) => {
 
-  const plg = PLUGINS[plugin.type],
+  const plg = PLUGINS[_plugin.type],
       options = plg.options;
 
   for (let i = 0; i < options.length; i++) {
     const option = options[i];
 
-    if (plugin.data.hasOwnProperty(option.key)) {
-      if (!plugin.data[option.key].match(option.regex)) {
-        return reject('request data value "' + option.key + '" is invalid');
+    const prop = _plugin.data[option.key];
+    if (typeof prop === 'string' && prop.length > 0) {
+      if (!_plugin.data[option.key].match(option.regex)) {
+        return reject('Invalid value: ' + option.key);
       }
     } else if (option.default !== undefined) {
-      plugin.data[option.key] = option.default;
+      _plugin.data[option.key] = option.default;
     } else {
-      return reject('request is missing "' + option.key + '" in "data"');
+      return reject('Required value: ' + option.key);
     }
   }
 
