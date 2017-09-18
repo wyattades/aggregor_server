@@ -75,21 +75,31 @@ exports.validPlugin = _plugin => new Promise((resolve, reject) => {
 });
 
 exports.fetchPlugin = _plugin => new Promise((resolve, reject) => {
-  const { type, data, offset, amount, id } = _plugin;
+  const { type, data, last_entry, amount, id } = _plugin;
 
   const plg = PLUGINS[type];
   if (!plg) {
     return reject('Invalid plugin type: ' + type);
   }
 
-  plg.request(data, offset, amount).catch(err => {
+  plg.request(data, last_entry, amount).catch(err => {
     throw new Error('Request Failed: ' + (typeof err === 'string' ? err : 'Unknown error'));
   })
   .then(res => plg.parse(res).catch(err => {
     throw new Error('Parse Failed: ' + (typeof err === 'string' ? err : 'Unknown error'));
   }))
   .then(_entries => processEntries(_plugin, plg, _entries))
-  .then(entries => resolve(entries))
+  .then(entries => {
+
+    if (entries.length === 0) {
+      throw new Error('Found no entries on this page');
+    }
+
+    const last_id = entries[entries.length - 1].id;
+    _plugin.last_entry.id = last_id.match(/^\d+:(.*):.*$/)[1];
+
+    resolve(entries);
+  })
   .catch(err => resolve({ err: err.message, id }));
 });
 

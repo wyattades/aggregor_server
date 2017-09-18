@@ -11,7 +11,7 @@ const config = require('../config'),
       responses = require('./responses'),
       regexRoute = utils.regexRoute;
 
-const __DEV__ = process.env.NODE_ENV === 'development';
+global.__DEV__ = process.env.NODE_ENV === 'development';
 
 const patternSchema = (type) => Joi.string().regex(new RegExp(`^${utils.MACROS[type]}$`));
 
@@ -190,7 +190,7 @@ function matchUrl(req) {
     .find(r => path.match(r.endpoint)
                && r.methods.includes(method));
 
-  if(!route)
+  if (!route)
     return [undefined, undefined, responses.notFound('No route: ' + method + ' ' + path)];
   else if (route.content_types && !route.content_types.includes(content_type)) {
     return [undefined, undefined, responses.badRequest('Invalid content type provided')];

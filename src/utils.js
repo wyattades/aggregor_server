@@ -47,3 +47,18 @@ const requiredInfo = {
   'password': /(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d$@$!%*#?&]{8,64}$/,
 };
 */
+
+exports.updateMultiple = ({ client, table, valueName, values, valueType }) => {
+  const valueMap = values.map((v, index) => `('${v.id}'::uuid, $${index + 1}::${valueType})`).join(', ');
+  
+  const query = `
+    UPDATE ${table} AS t SET
+      ${valueName} = c.${valueName}
+    FROM (VALUES
+      ${valueMap}
+    ) AS c(id, ${valueName})
+    WHERE c.id = t.id
+  `;
+  
+  return client.query(query, values.map(v => v[valueName]));
+};

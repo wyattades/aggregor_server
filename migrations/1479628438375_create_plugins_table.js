@@ -4,7 +4,8 @@ exports.up = function(pgm) {
     feed_id integer REFERENCES feeds ON DELETE CASCADE,
     type varchar(64) NOT NULL,
     priority real DEFAULT 0.5::real,
-    data jsonb NOT NULL
+    data jsonb NOT NULL,
+    last_entry jsonb DEFAULT '{}'
   );
 
   CREATE INDEX plugin_feed_id_idx ON plugins (feed_id);`;

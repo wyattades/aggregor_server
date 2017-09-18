@@ -15,6 +15,11 @@ const USER = 'g2_324f_38vK_D',
 let X_Aggregor_Token,
     plugin_id;
 
+const promiseFor = (condition, action, value) => {
+    if (!condition(value)) return Promise.resolve(value);
+    return action(value).then(promiseFor.bind(null, condition, action));
+};
+
 const command = (args) => {
     return new Promise((resolve, reject) => {
         let commandString = 'bash scripts/' + args[0] + '.sh';
@@ -51,6 +56,27 @@ const loginUser = password => {
     .then((res) => {
         X_Aggregor_Token = res.data.token;
         return Promise.resolve();
+    });
+};
+
+let map = {};
+let dups = [];
+const fetchFeed = (count) => {
+    return command(['fetch_feed', X_Aggregor_Token, USER, NEW_FEED_NAME, count])
+    .then((res) => {
+
+        res.data.entries.forEach(entry => {
+            const id = entry.id.split(':')[1];
+            if (map[id]) {
+                dups.push(entry.id);
+            } else {
+                map[id] = true;
+            }
+        });
+
+        // console.log("ENTRIES: ", res.data.entries.map(e => e.id));
+        // console.log("ERRORS: ", res.data.errors);
+        return Promise.resolve(++count);
     });
 };
 
@@ -135,22 +161,7 @@ deleteExistingUser()
         return Promise.resolve();
     });
 })
-.then(() => {
-    return command(['fetch_feed', X_Aggregor_Token, USER, NEW_FEED_NAME, 1])
-    .then((res) => {
-        // console.log("ENTRIES: ", res.data.entries);
-        // console.log("ERRORS: ", res.data.errors);
-        return Promise.resolve();
-    });
-})
-.then(() => {
-    return command(['fetch_feed', X_Aggregor_Token, USER, NEW_FEED_NAME, 2])
-    .then((res) => {
-        // console.log("ENTRIES: ", res.data.entries);
-        // console.log("ERRORS: ", res.data.errors);
-        return Promise.resolve();
-    });
-})
+.then(() => promiseFor(value => value <= 2, fetchFeed, 1))
 .then(() => {
     return command(['delete_plugin', X_Aggregor_Token, USER, NEW_FEED_NAME, plugin_id]);
 })
@@ -169,6 +180,8 @@ deleteExistingUser()
 })
 .then(() => {
     console.log("Successfully used all routes");
+
+    console.log('These dups were found: ', dups);
 })
 .catch((err) => {
     console.error("\nERROR:", err);

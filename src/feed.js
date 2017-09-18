@@ -1,5 +1,6 @@
 const responses = require('./responses'),
-  plugin = require('./plugin');
+      plugin = require('./plugin'),
+      updateMultiple = require('./utils').updateMultiple;
 
 var pg;
 
@@ -55,7 +56,8 @@ exports.createFeed = function (userId, data) {
       if (err) {
         reject(responses.internalError('Failed to connect to DB while creating new feed'));
       } else {
-        client.query('INSERT INTO feeds VALUES (DEFAULT, $1, $2) ON CONFLICT (user_id, name) DO NOTHING', [userId, data.name], (err, res) => {
+        client.query('INSERT INTO feeds VALUES (DEFAULT, $1, $2) ON CONFLICT (user_id, name) DO NOTHING', 
+        [userId, data.name], (err, res) => {
           done();
           if (err) {
             reject(responses.internalError('Failed to create feed'));
@@ -190,12 +192,13 @@ exports.fetchFeed = (userId, feedName, page, response) => new Promise((resolve, 
     } else {
       getFeedId(client, userId, feedName).then(feedId => {
         client.query(`SELECT * FROM plugins WHERE feed_id = $1`, [feedId], (err, res) => {
-          done();
           if (err) {
+            done();            
             reject(responses.internalError("Failed to fetch feed"));
           } else {
 
             const plugins = res.rows;
+            console.log(plugins);
 
             // TODO: fix duplicate entries being returned
 
@@ -204,18 +207,18 @@ exports.fetchFeed = (userId, feedName, page, response) => new Promise((resolve, 
             for (let i = 0; i < plugins.length; i++) {
               totalPriority += plugins[i].priority;
             }
-            for (let i = 0; i < plugins.length; i++) {
-              const normalPriority = plugins[i].priority / totalPriority;
-              plugins[i].normalPriority = normalPriority;
-              plugins[i].offset = Math.round((page-1)*normalPriority*AMOUNT_PER_PAGE);
-              plugins[i].amount = Math.round(normalPriority*AMOUNT_PER_PAGE);
-            }
 
-            Promise.all(plugins.map(_plugin => 
-              plugin.fetchPlugin(_plugin)
-            ))
+            Promise.all(plugins.map((_plugin, i) => {
+
+              const normalPriority = plugins[i].priority / totalPriority;
+
+              plugins[i].normalPriority = normalPriority;
+              plugins[i].last_entry.offset = Math.round((page - 1) * normalPriority * AMOUNT_PER_PAGE);
+              plugins[i].amount = Math.round(normalPriority * AMOUNT_PER_PAGE);
+
+              return plugin.fetchPlugin(_plugin);
+            }))
             .then(results => {
-              done();
 
               let entries = [], 
                   errors = {};
@@ -230,10 +233,27 @@ exports.fetchFeed = (userId, feedName, page, response) => new Promise((resolve, 
 
               entries.sort((a, b) => a.priority - b.priority);
 
-              respond(response, { entries, errors });
-              resolve({ handled: true });
+              updateMultiple({ 
+                client, 
+                table: 'plugins', 
+                valueName: 'last_entry', 
+                valueType: 'jsonb',
+                values: plugins
+              })
+              .then(res => {
+                done(); 
+                
+                respond(response, { entries, errors });
+                resolve({ handled: true });
+              }, err => {
+                done();       
+                reject(responses.internalError(err));
+              });
             })
-            .catch(err => reject(responses.internalError(err)));
+            .catch(err => {
+              done();
+              reject(responses.internalError(err));
+            });
           }
         });
       }, err => reject(responses.badRequest('No feed found with name: ' + feedName)));
@@ -252,7 +272,8 @@ exports.addPlugin = function (userId, feedName, data, response) {
             const { type, priority } = data,
               info = data.data;
 
-            client.query('INSERT INTO plugins VALUES (DEFAULT, $1, $2, $3::real, $4) RETURNING id', [feedId, type, priority, info], (err, res) => {
+            client.query('INSERT INTO plugins VALUES (DEFAULT, $1, $2, $3::real, $4) RETURNING id', 
+            [feedId, type, priority, info], (err, res) => {
               done();
 
               if (err) {
@@ -284,7 +305,8 @@ exports.updatePlugin = function (userId, feedName, pluginId, data) {
             const { type, priority } = data,
               info = data.data;
 
-            client.query('UPDATE plugins SET type = $1, data = $2, priority = $3::real WHERE id = $4 AND feed_id = $5', [type, info, priority, pluginId, feedId], (err, res) => {
+            client.query('UPDATE plugins SET type = $1, data = $2, priority = $3::real WHERE id = $4 AND feed_id = $5', 
+            [type, info, priority, pluginId, feedId], (err, res) => {
               done();
               if (err) {
                 reject(responses.internalError("Failed to update plugin"));

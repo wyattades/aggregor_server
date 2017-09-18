@@ -16,11 +16,11 @@ exports.icon = 'reddit';
 exports.iconFamily = 'FontAwesome';
 exports.color = '#149EF0';
 
-exports.request = (data, offset, amount) => {
+exports.request = (data, { id }, amount) => {
 
   const hasSubreddit = typeof data.subreddit === 'string' && data.subreddit.length > 0,
         subpath = hasSubreddit ? ('r/' + data.subreddit) : '', 
-        uri = `${exports.BASE_URL}${subpath}.json?count=${offset}&limit=${amount}`;
+        uri = `${exports.BASE_URL}${subpath}.json?after=${id}&limit=${amount}`;
 
   return request({ 
     uri, 
