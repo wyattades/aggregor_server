@@ -82,7 +82,7 @@ exports.fetchPlugin = _plugin => new Promise((resolve, reject) => {
     return reject('Invalid plugin type: ' + type);
   }
 
-  plg.request(data, last_entry, amount).catch(err => {
+  plg.request(_plugin, amount).catch(err => {
     throw new Error('Request Failed: ' + (typeof err === 'string' ? err : 'Unknown error'));
   })
   .then(res => plg.parse(res).catch(err => {
@@ -92,18 +92,15 @@ exports.fetchPlugin = _plugin => new Promise((resolve, reject) => {
   .then(entries => {
 
     if (entries.length === 0) {
-      throw new Error('Found no entries on this page');
+      throw new Error('Parse Failed: Found no entries on this page');
     }
-
-    const last_id = entries[entries.length - 1].id;
-    _plugin.last_entry.id = last_id.match(/^\d+:(.*):.*$/)[1];
 
     resolve(entries);
   })
   .catch(err => resolve({ err: err.message, id }));
 });
 
-const processEntries = ({ type, id, normalPriority, offset }, plg, entries) => Promise.resolve(entries.map((entryData, index) => {
+const processEntries = ({ type, id, normalPriority, last_entry: { offset } }, plg, entries) => Promise.resolve(entries.map((entryData, index) => {
   const realIndex = offset + index;
 
   entryData.pluginId = id;

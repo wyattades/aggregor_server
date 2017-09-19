@@ -17,7 +17,7 @@ exports.icon = 'hacker-news';
 exports.iconFamily = 'FontAwesome';
 exports.color = '#ff6600';
 
-exports.request = (data, { offset }, amount) => {
+exports.request = ({ last_entry: { offset } }, amount) => {
 
   const sliceBegin = offset % AMOUNT_PER_PAGE,
         sliceEnd = sliceBegin + amount;

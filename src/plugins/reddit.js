@@ -16,11 +16,14 @@ exports.icon = 'reddit';
 exports.iconFamily = 'FontAwesome';
 exports.color = '#149EF0';
 
-exports.request = (data, { id }, amount) => {
+exports.request = (_plugin, amount) => {
+
+  const { data, last_entry: { after, offset } } = _plugin;
 
   const hasSubreddit = typeof data.subreddit === 'string' && data.subreddit.length > 0,
         subpath = hasSubreddit ? ('r/' + data.subreddit) : '', 
-        uri = `${exports.BASE_URL}${subpath}.json?after=${id}&limit=${amount}`;
+        afterQuery = offset > 0 ? `&after=${after}` : '',
+        uri = `${exports.BASE_URL}${subpath}.json?limit=${amount}${afterQuery}`;
 
   return request({ 
     uri, 
@@ -31,6 +34,9 @@ exports.request = (data, { id }, amount) => {
     if (hasSubreddit && !res.request.uri.pathname.startsWith('/r/')) {
       throw 'Invalid subreddit';
     }
+
+    _plugin.last_entry.after = res.body.data.after;
+
     return res.body;
   });
 };

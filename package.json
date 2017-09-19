@@ -27,7 +27,9 @@
     "request-promise-native": "^1.0.4",
     "through2": "^2.0.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^4.7.1"
+  },
   "keywords": [
     "node"
   ],

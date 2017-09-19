@@ -5,7 +5,7 @@ exports.up = function(pgm) {
     type varchar(64) NOT NULL,
     priority real DEFAULT 0.5::real,
     data jsonb NOT NULL,
-    last_entry jsonb DEFAULT '{}'
+    last_entry jsonb DEFAULT '{}'::jsonb
   );
 
   CREATE INDEX plugin_feed_id_idx ON plugins (feed_id);`;

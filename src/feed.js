@@ -198,28 +198,24 @@ exports.fetchFeed = (userId, feedName, page, response) => new Promise((resolve, 
           } else {
 
             const plugins = res.rows;
-            console.log(plugins);
 
-            // TODO: fix duplicate entries being returned
-
-            // TODO move this to the database when we add or update plugin
             let totalPriority = 0;
             for (let i = 0; i < plugins.length; i++) {
               totalPriority += plugins[i].priority;
             }
 
-            Promise.all(plugins.map((_plugin, i) => {
+            Promise.all(plugins.map(_plugin => {
 
-              const normalPriority = plugins[i].priority / totalPriority;
+              const normalPriority = _plugin.priority / totalPriority;
 
-              plugins[i].normalPriority = normalPriority;
-              plugins[i].last_entry.offset = Math.round((page - 1) * normalPriority * AMOUNT_PER_PAGE);
-              plugins[i].amount = Math.round(normalPriority * AMOUNT_PER_PAGE);
+              _plugin.normalPriority = normalPriority;
+              _plugin.last_entry.offset = Math.round((page - 1) * normalPriority * AMOUNT_PER_PAGE);
+              _plugin.amount = Math.round(normalPriority * AMOUNT_PER_PAGE);
 
               return plugin.fetchPlugin(_plugin);
             }))
             .then(results => {
-
+              
               let entries = [], 
                   errors = {};
               for (let i = 0; i < results.length; i++) {
@@ -240,7 +236,7 @@ exports.fetchFeed = (userId, feedName, page, response) => new Promise((resolve, 
                 valueType: 'jsonb',
                 values: plugins
               })
-              .then(res => {
+              .then(() => {
                 done(); 
                 
                 respond(response, { entries, errors });

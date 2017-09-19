@@ -65,9 +65,10 @@ const fetchFeed = (count) => {
     return command(['fetch_feed', X_Aggregor_Token, USER, NEW_FEED_NAME, count])
     .then((res) => {
 
+        // Find duplicates
         res.data.entries.forEach(entry => {
             const id = entry.id.split(':')[1];
-            if (map[id]) {
+            if (map[id] === true) {
                 dups.push(entry.id);
             } else {
                 map[id] = true;
@@ -163,6 +164,12 @@ deleteExistingUser()
 })
 .then(() => promiseFor(value => value <= 2, fetchFeed, 1))
 .then(() => {
+    if (dups.length > 0) {
+        console.log('These dups were found: ', dups);
+        throw new Error('Duplicates entries in feed');
+    }
+})
+.then(() => {
     return command(['delete_plugin', X_Aggregor_Token, USER, NEW_FEED_NAME, plugin_id]);
 })
 .then(() => {
@@ -180,8 +187,6 @@ deleteExistingUser()
 })
 .then(() => {
     console.log("Successfully used all routes");
-
-    console.log('These dups were found: ', dups);
 })
 .catch((err) => {
     console.error("\nERROR:", err);

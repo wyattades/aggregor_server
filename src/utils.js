@@ -49,16 +49,24 @@ const requiredInfo = {
 */
 
 exports.updateMultiple = ({ client, table, valueName, values, valueType }) => {
-  const valueMap = values.map((v, index) => `('${v.id}'::uuid, $${index + 1}::${valueType})`).join(', ');
+
+  if (values.length === 0) {
+    return Promise.resolve();
+  }
+
+  const valueMap = values.map((v, i) => `('${v.id}'::uuid, $${i + 1}::${valueType})`).join(', ');
   
   const query = `
-    UPDATE ${table} AS t SET
+    UPDATE ${table} SET
       ${valueName} = c.${valueName}
     FROM (VALUES
       ${valueMap}
     ) AS c(id, ${valueName})
-    WHERE c.id = t.id
+    WHERE c.id = ${table}.id
   `;
   
-  return client.query(query, values.map(v => v[valueName]));
+  return client.query(
+    query, 
+    values.map(v => v[valueName])
+  );
 };
